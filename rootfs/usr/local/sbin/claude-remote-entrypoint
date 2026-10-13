@@ -1,0 +1,20 @@
+#!/bin/sh
+# Installs the mounted host key and authorized_keys into root-owned paths,
+# then runs sshd. Refuses to start without either mount.
+set -eu
+
+hostkey=/mnt/claude-remote/hostkey/ssh_host_ed25519_key
+keys=/mnt/claude-remote/authorized-keys/authorized_keys
+
+for f in "$hostkey" "$keys"; do
+  [ -s "$f" ] || { echo "claude-remote: $f is missing or empty, mount it" >&2; exit 1; }
+done
+
+install -o root -g root -m 0400 "$hostkey" /etc/ssh/ssh_host_ed25519_key
+install -d -o root -g root -m 0755 /etc/ssh/authorized_keys
+install -o root -g root -m 0644 "$keys" /etc/ssh/authorized_keys/alekc
+
+# A fresh home volume mounts root-owned.
+chown alekc:alekc /home/alekc
+install -d -m 0755 /run/sshd
+exec /usr/sbin/sshd -D -e
