@@ -166,12 +166,12 @@ RUN apt-get update \
     ripgrep rsync shellcheck tini tmux unzip vim xz-utils zip \
   && rm -rf /var/lib/apt/lists/* /etc/ssh/ssh_host_*
 
-# The base image's uid 1000 becomes the agent user, without sudo or adm.
-RUN usermod -l alekc -d /home/alekc ubuntu \
-  && groupmod -n alekc ubuntu \
-  && for g in sudo adm; do gpasswd -d alekc "$g" >/dev/null 2>&1 || true; done \
-  && rm -rf /home/ubuntu \
-  && install -d -o alekc -g alekc /home/alekc
+# The base image's uid 1000 becomes a neutral agent account without sudo or
+# adm; the entrypoint renames it to $USER on every start.
+RUN usermod -l agent -d /home/agent -c agent ubuntu \
+  && groupmod -n agent ubuntu \
+  && for g in sudo adm; do gpasswd -d agent "$g" >/dev/null 2>&1 || true; done \
+  && rm -rf /home/ubuntu
 
 COPY --from=helm /out/ /usr/local/bin/
 COPY --from=yq /out/ /usr/local/bin/
@@ -195,7 +195,7 @@ COPY --from=node /out /usr/local/lib/nodejs
 RUN ln -s /usr/local/go/bin/go /usr/local/go/bin/gofmt /usr/local/bin/ \
   && for b in node npm npx corepack; do ln -s /usr/local/lib/nodejs/bin/$b /usr/local/bin/$b; done
 
-# Everything below lives outside /home/alekc, which the home volume hides.
+# Everything below lives outside /home, which the home volume hides.
 ENV HELM_PLUGINS=/opt/helm/plugins
 # renovate: datasource=github-releases depName=databus23/helm-diff
 ARG HELM_DIFF_VERSION=3.15.15
@@ -224,15 +224,15 @@ RUN uv tool install --no-cache ansible-core==${ANSIBLE_CORE_VERSION} \
 
 # Homebrew is the scratch tier: owned by the agent user, so installs need no
 # sudo, and outside the home volume, so they reset on every restart.
-RUN install -d -o alekc -g alekc /home/linuxbrew
-USER alekc
+RUN install -d -o 1000 -g 1000 /home/linuxbrew
+USER 1000:1000
 RUN HOME=/tmp/brew-home NONINTERACTIVE=1 HOMEBREW_NO_ANALYTICS=1 \
     bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" \
   && rm -rf /tmp/brew-home
 USER root
 
 COPY rootfs/ /
-RUN chmod 0755 /usr/local/sbin/claude-remote-entrypoint /usr/local/libexec/claude-remote/smoke-test \
+RUN chmod 0755 /usr/local/sbin/claude-remote-entrypoint /usr/local/libexec/claude-remote/* \
   && echo '. /etc/profile.d/claude-remote.sh' >> /etc/bash.bashrc
 
 EXPOSE 2222

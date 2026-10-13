@@ -1,0 +1,29 @@
+#!/bin/sh
+# set-user NAME: renames the image's uid 1000 account to NAME, owns its home
+# and lets only NAME log in. The one place the login name is validated.
+set -eu
+
+name=${1:-}
+case "$name" in
+  '') echo "claude-remote: set USER to the agent's login name" >&2; exit 1 ;;
+  root) echo "claude-remote: USER must not be root" >&2; exit 1 ;;
+esac
+if ! printf '%s' "$name" | grep -Eq '^[a-z_][a-z0-9_-]{0,31}$'; then
+  echo "claude-remote: USER '$name' is not a valid login name" >&2
+  exit 1
+fi
+
+cur=$(getent passwd 1000 | cut -d: -f1)
+if [ "$cur" != "$name" ]; then
+  if getent passwd "$name" >/dev/null; then
+    echo "claude-remote: USER '$name' is an existing system account" >&2
+    exit 1
+  fi
+  usermod -l "$name" -d "/home/$name" "$cur"
+  groupmod -n "$name" "$(getent group 1000 | cut -d: -f1)"
+fi
+
+# A fresh home volume mounts root-owned.
+install -d "/home/$name"
+chown 1000:1000 "/home/$name"
+printf 'AllowUsers %s\n' "$name" > /etc/ssh/sshd_config.d/20-claude-remote-user.conf
