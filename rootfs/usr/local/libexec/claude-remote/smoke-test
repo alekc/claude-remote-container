@@ -49,6 +49,7 @@ check direnv version
 check rg --version
 check shellcheck --version
 check bats --version
+check ccstatusline --version
 for p in diff s3 unittest schema; do
   check sh -c "helm plugin list | grep -q '^$p[[:space:]]'"
 done
@@ -82,5 +83,13 @@ as_user 'test "$(go env GOMODCACHE)" = /var/cache/claude-remote/go/mod'
 as_user 'test "$(go env GOCACHE)" = /var/cache/claude-remote/go-build'
 as_user 'test "$(npm config get cache)" = /var/cache/claude-remote/npm'
 as_user 'touch /var/cache/claude-remote/.w && rm /var/cache/claude-remote/.w'
+
+# Status line: seeded into an empty home, never over an edit, and renders.
+seed=/usr/local/libexec/claude-remote/seed-home
+check sh -c "! $seed 2>/dev/null"
+as_user "$seed && jq -e '.lines | length > 0' ~/.config/ccstatusline/settings.json"
+as_user "jq -e '.statusLine.command == \"ccstatusline\"' ~/.claude/settings.json"
+as_user "echo '{\"lines\":[[]]}' > ~/.config/ccstatusline/settings.json && $seed && jq -e '.lines == [[]]' ~/.config/ccstatusline/settings.json"
+as_user "rm ~/.config/ccstatusline/settings.json && $seed && echo '{\"model\":{\"display_name\":\"smoke\"}}' | ccstatusline | grep -q smoke"
 
 exit "$failed"

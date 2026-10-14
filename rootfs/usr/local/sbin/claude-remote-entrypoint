@@ -16,5 +16,10 @@ install -o root -g root -m 0400 "$hostkey" /etc/ssh/ssh_host_ed25519_key
 install -d -o root -g root -m 0755 /etc/ssh/authorized_keys
 install -o root -g root -m 0644 "$keys" "/etc/ssh/authorized_keys/$USER"
 
+# Defaults are a convenience: a failure is reported, never blocks login.
+env -i HOME="/home/$USER" PATH=/usr/local/bin:/usr/bin:/bin \
+  setpriv --reuid=1000 --regid=1000 --init-groups /usr/local/libexec/claude-remote/seed-home \
+  || echo "claude-remote: seeding home defaults failed, continuing" >&2
+
 install -d -m 0755 /run/sshd
 exec /usr/sbin/sshd -D -e

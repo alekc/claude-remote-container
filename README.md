@@ -15,6 +15,8 @@ to run as a single Kubernetes pod with a persistent home volume.
 - Language runtimes through [mise](https://mise.jdx.dev): `go`, `node`, `python`.
 - General tooling: `gh`, `glab`, `infisical`, `rclone`, `trivy`, `yq`, `uv`,
   `pre-commit`, `herdr`, Homebrew.
+- [ccstatusline](https://github.com/sirmalloc/ccstatusline) as the Claude Code
+  status line, seeded with a default layout.
 
 Every downloaded binary is checked against the publisher's SHA-256 before it is
 installed. herdr publishes no checksums file, so its hash comes from the GitHub
@@ -64,6 +66,13 @@ docker run -d -p 2222:2222 -e USER=jane \
 Homebrew is the scratch tier: the agent user owns it, so `brew install` needs no
 root, and it is outside the home volume, so it resets on every restart. Tools
 that must survive a restart belong in this image.
+
+On every start, `seed-home` copies defaults into the home volume where the file
+is missing, and never over an existing one: the ccstatusline layout to
+`~/.config/ccstatusline/settings.json`, and a `statusLine` entry into
+`~/.claude/settings.json` when it has none. It runs as the agent user, and a
+failure is logged without blocking `sshd`. The defaults live in
+`/usr/local/share/claude-remote`.
 
 Caches are kept off the home volume so they cannot fill it:
 `XDG_CACHE_HOME=/var/cache/claude-remote` covers Go's build cache, uv, pip,

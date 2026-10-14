@@ -1,0 +1,26 @@
+#!/bin/sh
+# Seeds per-user defaults into the home volume, never over an existing file.
+# Runs as the agent user: a symlink planted in home cannot redirect it.
+set -eu
+
+if [ "$(id -u)" = 0 ]; then
+  echo "claude-remote: seed-home must run as the agent user, not root" >&2
+  exit 1
+fi
+share=/usr/local/share/claude-remote
+
+cfg=$HOME/.config/ccstatusline/settings.json
+if [ ! -e "$cfg" ] && [ ! -L "$cfg" ]; then
+  install -D -m 0644 "$share/ccstatusline-settings.json" "$cfg"
+fi
+
+# Claude Code reads the status line command from its user settings.
+settings=$HOME/.claude/settings.json
+if [ ! -e "$settings" ] && [ ! -L "$settings" ]; then
+  install -d -m 0700 "$HOME/.claude"
+  jq -n --slurpfile s "$share/statusline.json" '{statusLine: $s[0]}' > "$settings"
+elif ! jq -e 'has("statusLine")' "$settings" >/dev/null; then
+  tmp=$(mktemp "$settings.XXXXXX")
+  jq --slurpfile s "$share/statusline.json" '. + {statusLine: $s[0]}' "$settings" > "$tmp" \
+    && mv "$tmp" "$settings" || { rm -f "$tmp"; exit 1; }
+fi

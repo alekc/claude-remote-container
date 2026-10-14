@@ -231,6 +231,15 @@ RUN install -d /etc/mise \
   && rm -rf /root/.cache /root/.local
 ENV PATH=/usr/local/share/mise/shims:$PATH
 
+# Claude Code status line. Its own prefix keeps it off any one node version:
+# the shebang finds node through the mise shim, whichever version is active.
+# renovate: datasource=npm depName=ccstatusline
+ARG CCSTATUSLINE_VERSION=2.2.32
+RUN npm install --global --prefix /opt/ccstatusline --cache /tmp/npm-cache \
+    --no-fund --no-audit ccstatusline@${CCSTATUSLINE_VERSION} \
+  && ln -s /opt/ccstatusline/bin/ccstatusline /usr/local/bin/ccstatusline \
+  && rm -rf /tmp/npm-cache
+
 # Homebrew is the scratch tier: owned by the agent user, so installs need no
 # sudo, and outside the home volume, so they reset on every restart.
 RUN install -d -o 1000 -g 1000 /home/linuxbrew
