@@ -1,6 +1,6 @@
 #!/bin/sh
 # set-user NAME: renames the image's uid 1000 account to NAME, owns its home
-# and lets only NAME log in. The one place the login name is validated.
+# and cache, lets only NAME log in. The one place the name is validated.
 set -eu
 
 name=${1:-}
@@ -23,7 +23,7 @@ if [ "$cur" != "$name" ]; then
   groupmod -n "$name" "$(getent group 1000 | cut -d: -f1)"
 fi
 
-# A fresh home volume mounts root-owned.
-install -d "/home/$name"
-chown 1000:1000 "/home/$name"
+# A fresh home volume, or an emptyDir over the cache, mounts root-owned.
+install -d "/home/$name" /var/cache/claude-remote
+chown 1000:1000 "/home/$name" /var/cache/claude-remote
 printf 'AllowUsers %s\n' "$name" > /etc/ssh/sshd_config.d/20-claude-remote-user.conf

@@ -1,7 +1,11 @@
 # Every shell on the host: ssh logins read it via /etc/profile, herdr panes
 # (interactive, non-login) via /etc/bash.bashrc.
 export HOMEBREW_NO_ANALYTICS=1 HELM_PLUGINS=/opt/helm/plugins CHECKPOINT_DISABLE=1
-export NPM_CONFIG_PREFIX="$HOME/.local"
+export NPM_CONFIG_PREFIX="$HOME/.local" GOBIN="$HOME/.local/bin"
+# Caches live off the home volume, so a restart empties them. Go's module
+# cache and npm's do not follow XDG_CACHE_HOME and are pointed there too.
+export XDG_CACHE_HOME=/var/cache/claude-remote
+export GOMODCACHE="$XDG_CACHE_HOME/go/mod" npm_config_cache="$XDG_CACHE_HOME/npm"
 if [ -x /home/linuxbrew/.linuxbrew/bin/brew ] && [ -z "${HOMEBREW_PREFIX:-}" ]; then
   eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
 fi

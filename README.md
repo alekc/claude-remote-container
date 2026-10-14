@@ -65,6 +65,14 @@ Homebrew is the scratch tier: the agent user owns it, so `brew install` needs no
 root, and it is outside the home volume, so it resets on every restart. Tools
 that must survive a restart belong in this image.
 
+Caches are kept off the home volume so they cannot fill it:
+`XDG_CACHE_HOME=/var/cache/claude-remote` covers Go's build cache, uv, pip,
+mise downloads, trivy, helm and Homebrew, and `GOMODCACHE` and npm's cache are
+pointed under it. A restart empties it. Within one container's life it grows in
+the container's writable layer, so in Kubernetes mount an `emptyDir` with a
+`sizeLimit` there. `go install` and `npm install -g` write to `~/.local/bin`,
+which persists.
+
 ## Building
 
 ```bash

@@ -77,5 +77,10 @@ as_user 'herdr --version && helm plugin list | grep -q ^diff'
 as_user 'test "$(command -v node)" = /usr/local/share/mise/shims/node'
 as_user 'mise ls --current --offline | grep -c "(system)" | grep -qx 3'
 as_user 'go version && node --version && python --version'
+# Caches go to the non-persistent cache dir, never the home volume.
+as_user 'test "$(go env GOMODCACHE)" = /var/cache/claude-remote/go/mod'
+as_user 'test "$(go env GOCACHE)" = /var/cache/claude-remote/go-build'
+as_user 'test "$(npm config get cache)" = /var/cache/claude-remote/npm'
+as_user 'touch /var/cache/claude-remote/.w && rm /var/cache/claude-remote/.w'
 
 exit "$failed"
