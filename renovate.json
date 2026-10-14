@@ -5,7 +5,6 @@
     "helpers:pinGitHubActionDigests"
   ],
   "minimumReleaseAge": "3 days",
-  "minimumReleaseAgeBehaviour": "timestamp-optional",
   "customManagers": [
     {
       "customType": "regex",
@@ -31,6 +30,11 @@
       "description": "Release tags carry a v prefix the ARGs do not",
       "matchDatasources": ["github-releases", "gitlab-releases"],
       "extractVersion": "^v?(?<version>.*)$"
+    },
+    {
+      "description": "A git commit has no release timestamp, which would hold its bumps forever; every other datasource keeps the 3-day age check",
+      "matchDatasources": ["git-refs"],
+      "minimumReleaseAgeBehaviour": "timestamp-optional"
     },
     {
       "description": "One PR for every tool bump; majors still get their own",

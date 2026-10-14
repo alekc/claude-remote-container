@@ -121,7 +121,8 @@ on native amd64.
 
 Renovate tracks the base image digest, every tool version (a `# renovate:`
 comment above each `ARG`), the Homebrew installer's pinned commit and the
-pinned action digests, after a 3-day release age.
+pinned action digests, after a 3-day release age. The installer commit has no
+release timestamp to age, so its bumps skip that wait.
 
 | PR | Contents | Merges itself |
 | --- | --- | --- |
