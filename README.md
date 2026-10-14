@@ -54,9 +54,15 @@ The keys are copied to root-owned paths before `sshd` starts, so the agent user
 cannot change who may log in. The host key must not be readable by uid 1000, or
 the entrypoint refuses to start: in Kubernetes mount its Secret with
 `defaultMode: 0400` and do not set the pod's `fsGroup` to 1000, which makes it
-group-readable; for a bind mount, make the file root-owned and 0400. `/home/$USER` is expected to be a volume, mounted
-at the path matching `USER`; anything the image needs lives outside `/home`
-(`/opt`, `/usr/local`), except Homebrew in `/home/linuxbrew`.
+group-readable; for a bind mount, make the file root-owned and 0400.
+
+`/home/$USER` is expected to be a volume, mounted at the path matching `USER`;
+anything the image needs lives outside `/home` (`/opt`, `/usr/local`), except
+Homebrew in `/home/linuxbrew`. It is the only place that survives a restart, so
+projects belong under it, conventionally `~/dev/<project>`. A project that needs
+its own volume (size, backup policy) can be mounted below the home: on every
+start the agent is given each root-owned mount root there, never the files in
+it, which is what `fsGroup` would otherwise be needed for.
 
 ```bash
 docker run -d -p 2222:2222 -e USER=jane \
@@ -97,7 +103,8 @@ The smoke test runs every tool's version command, checks that `set-user` rejects
 bad names and renames idempotently, that no host key and no sudo shipped, and
 validates the sshd config. CI then starts the real entrypoint twice: with a host
 key uid 1000 can read, which must refuse, and with a root-only one, which must
-accept an SSH key login as `$USER` with the home seeded.
+accept an SSH key login as `$USER` with the home seeded, the profile loaded for
+a non-interactive command, and a fresh volume below the home writable.
 
 On an Apple Silicon machine whose Docker runtime emulates amd64 with Rosetta,
 the final stage fails: Ubuntu 26.04's `tar` needs the `openat2` syscall, which
