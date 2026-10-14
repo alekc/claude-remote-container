@@ -58,7 +58,8 @@ jobs:
 
       # The real entrypoint: a host key uid 1000 can read stops it, a
       # root-only one lets a key run `ssh host cmd` as $USER with the home
-      # seeded and the profile (helm plugins, mise shims) loaded.
+      # seeded and the profile loaded. sshd drops the image's ENV, so each of
+      # these values can only come from profile.d.
       - name: SSH login
         run: |
           set -euo pipefail
@@ -87,7 +88,8 @@ jobs:
           ssh -i "$d/client" -p 2222 -o BatchMode=yes -o StrictHostKeyChecking=no \
             -o UserKnownHostsFile=/dev/null ci@127.0.0.1 \
             'test "$(id -un)" = ci && test -s ~/.config/ccstatusline/settings.json &&
-            helm plugin list | grep -q ^diff && command -v node | grep -q /mise/shims/'
+            helm plugin list | grep -q ^diff && command -v node | grep -q /mise/shims/ &&
+            test "$XDG_CACHE_HOME" = /var/cache/claude-remote && brew --version'
 
       # Fork PRs get a read-only token, so only same-repo refs publish, and a
       # manual run on a branch has no tag to push.
