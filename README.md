@@ -114,8 +114,8 @@ on native amd64.
 
 ## CI and tags
 
-`.github/workflows/image.yml` builds, smoke-tests, and only then pushes to
-`ghcr.io/alekc/claude-remote-container`:
+`.github/workflows/image.yml` builds once, tests, and only then pushes that same
+image, never a rebuild, to `ghcr.io/alekc/claude-remote-container`:
 
 | Event | Tags |
 | --- | --- |
