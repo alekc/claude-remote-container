@@ -1,0 +1,77 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended",
+    "helpers:pinGitHubActionDigests"
+  ],
+  "minimumReleaseAge": "3 days",
+  "customManagers": [
+    {
+      "customType": "regex",
+      "description": "Tool versions pinned as Dockerfile ARGs",
+      "managerFilePatterns": ["/(^|/)Dockerfile$/"],
+      "matchStrings": [
+        "# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)\\s+ARG \\w+=(?<currentValue>\\S+)"
+      ]
+    },
+    {
+      "customType": "regex",
+      "description": "Git commits pinned as Dockerfile ARGs, following a branch",
+      "managerFilePatterns": [
+        "/(^|/)Dockerfile$/"
+      ],
+      "matchStrings": [
+        "# renovate: datasource=(?<datasource>git-refs) depName=(?<depName>\\S+) branch=(?<currentValue>\\S+)\\s+ARG \\w+=(?<currentDigest>[0-9a-f]{40})"
+      ]
+    }
+  ],
+  "packageRules": [
+    {
+      "description": "Release tags carry a v prefix the ARGs do not",
+      "matchDatasources": ["github-releases", "gitlab-releases"],
+      "extractVersion": "^v?(?<version>.*)$"
+    },
+    {
+      "description": "A git commit has no release timestamp, which would hold its bumps forever; every other datasource keeps the 3-day age check",
+      "matchDatasources": ["git-refs"],
+      "minimumReleaseAgeBehaviour": "timestamp-optional"
+    },
+    {
+      "description": "One PR for every tool bump; majors still get their own",
+      "matchManagers": ["custom.regex"],
+      "groupName": "tooling"
+    },
+    {
+      "description": "Low-risk bumps merge themselves once CI passes",
+      "matchUpdateTypes": ["minor", "patch", "digest", "pinDigest"],
+      "automerge": true
+    },
+    {
+      "description": "A grouped PR automerges only if every bump in it may, so one of these holds the whole tooling PR for review",
+      "matchPackageNames": [
+        "ubuntu",
+        "cli/cli",
+        "gitlab-org/cli",
+        "Infisical/cli"
+      ],
+      "automerge": false
+    },
+    {
+      "description": "Runtime defaults: a minor changes behaviour for every project without its own version file",
+      "matchPackageNames": ["go", "node", "python"],
+      "matchUpdateTypes": ["minor"],
+      "automerge": false
+    },
+    {
+      "description": "A newer binary rewrites state irreversibly: own PR, always reviewed",
+      "matchPackageNames": ["opentofu/opentofu", "hashicorp/terraform"],
+      "groupName": "tofu and terraform",
+      "automerge": false
+    },
+    {
+      "description": "kubectl tracks the cluster's minor",
+      "matchPackageNames": ["kubernetes/kubernetes"],
+      "allowedVersions": "/^1\\.36\\./"
+    }
+  ]
+}

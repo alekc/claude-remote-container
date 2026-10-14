@@ -1,0 +1,101 @@
+#!/bin/bash
+# Build gate run by CI before any push: every tool starts, sshd's config
+# parses, the image ships no host key, and the agent user has no root path.
+set -euo pipefail
+
+failed=0
+check() {
+  if out=$("$@" 2>&1); then
+    printf 'ok    %s: %s\n' "$*" "$(head -n1 <<<"$out")"
+  else
+    printf 'FAIL  %s\n%s\n' "$*" "$out"
+    failed=1
+  fi
+}
+name=smoketest
+# As the agent user, through a login shell, so PATH comes from profile.d.
+as_user() { check su - "$name" -s /bin/bash -c "$*"; }
+
+export CHECKPOINT_DISABLE=1 HELM_PLUGINS=/opt/helm/plugins
+
+check helm version --short
+check yq --version
+check kubeconform -v
+check helm-docs --version
+check velero version --client-only
+check vals version
+check helmfile --version
+check trivy --version
+check rclone version
+check uv --version
+check herdr --version
+check gh --version
+check glab --version
+check infisical --version
+check tofu version
+check terraform version
+check kubectl version --client
+check mise --version
+check go version
+check node --version
+check npm --version
+check python --version
+check ansible --version
+check ansible-lint --version
+check pre-commit --version
+check python3 --version
+check tini --version
+check direnv version
+check rg --version
+check shellcheck --version
+check bats --version
+check ccstatusline --version
+for p in diff s3 unittest schema; do
+  check sh -c "helm plugin list | grep -q '^${p}[[:space:]]'"
+done
+
+set_user=/usr/local/libexec/claude-remote/set-user
+for bad in '' root daemon sudo linuxbrew 'Bad Name'; do
+  check sh -c "! $set_user '$bad' 2>/dev/null"
+done
+# Refused before any change, not halfway through the rename.
+check sh -c 'test "$(getent passwd 1000 | cut -d: -f1)" = agent'
+check sh -c 'test "$(getent group 1000 | cut -d: -f1)" = agent'
+check "$set_user" "$name"
+check "$set_user" "$name"
+check sh -c "test \"\$(stat -c %U /home/$name)\" = $name"
+check grep -qx "AllowUsers $name" /etc/ssh/sshd_config.d/20-claude-remote-user.conf
+
+check sh -c '! ls /etc/ssh/ssh_host_* 2>/dev/null'
+check sh -c '! command -v sudo'
+check sh -c "! id -nG $name | grep -qwE 'sudo|adm'"
+key=$(mktemp -d)/k
+ssh-keygen -q -t ed25519 -N '' -f "$key"
+install -d -m 0755 /run/sshd
+check /usr/sbin/sshd -t -h "$key"
+
+as_user 'test "$(id -u)" = 1000'
+# Sourced by every ssh command, so any output would corrupt scp and rsync.
+as_user 'test -z "$(. /etc/profile.d/claude-remote.sh 2>&1)"'
+check sh -c "head -n1 /etc/bash.bashrc | grep -qx '. /etc/profile.d/claude-remote.sh'"
+as_user 'brew --version'
+as_user 'herdr --version && helm plugin list | grep -q ^diff'
+# The user reaches the runtimes through the system shims, at the defaults.
+as_user 'test "$(command -v node)" = /usr/local/share/mise/shims/node'
+as_user 'mise ls --current --offline | grep -c "(system)" | grep -qx 3'
+as_user 'go version && node --version && python --version'
+# Caches go to the non-persistent cache dir, never the home volume.
+as_user 'test "$(go env GOMODCACHE)" = /var/cache/claude-remote/go/mod'
+as_user 'test "$(go env GOCACHE)" = /var/cache/claude-remote/go-build'
+as_user 'test "$(npm config get cache)" = /var/cache/claude-remote/npm'
+as_user 'touch /var/cache/claude-remote/.w && rm /var/cache/claude-remote/.w'
+
+# Status line: seeded into an empty home, never over an edit, and renders.
+seed=/usr/local/libexec/claude-remote/seed-home
+check sh -c "! $seed 2>/dev/null"
+as_user "$seed && jq -e '.lines | length > 0' ~/.config/ccstatusline/settings.json"
+as_user "jq -e '.statusLine.command == \"ccstatusline\"' ~/.claude/settings.json"
+as_user "echo '{\"lines\":[[]]}' > ~/.config/ccstatusline/settings.json && $seed && jq -e '.lines == [[]]' ~/.config/ccstatusline/settings.json"
+as_user "rm ~/.config/ccstatusline/settings.json && $seed && echo '{\"model\":{\"display_name\":\"smoke\"}}' | ccstatusline | grep -q smoke"
+
+exit "$failed"

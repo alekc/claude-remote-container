@@ -1,0 +1,49 @@
+#!/bin/sh
+# set-user NAME: renames the image's uid 1000 account to NAME, owns its home
+# and cache, lets only NAME log in. The one place the name is validated.
+set -eu
+
+name=${1:-}
+case "$name" in
+  '') echo "claude-remote: set USER to the agent's login name" >&2; exit 1 ;;
+  root) echo "claude-remote: USER must not be root" >&2; exit 1 ;;
+  # /home/$USER is the home volume, which would hide Homebrew's prefix.
+  linuxbrew) echo "claude-remote: USER must not be linuxbrew" >&2; exit 1 ;;
+esac
+if ! printf '%s' "$name" | grep -Eq '^[a-z_][a-z0-9_-]{0,31}$'; then
+  echo "claude-remote: USER '$name' is not a valid login name" >&2
+  exit 1
+fi
+
+cur=$(getent passwd 1000 | cut -d: -f1)
+if [ "$cur" != "$name" ]; then
+  # The group is renamed too, so a name taken by either would fail midway.
+  if getent passwd "$name" >/dev/null || getent group "$name" >/dev/null; then
+    echo "claude-remote: USER '$name' is an existing system account or group" >&2
+    exit 1
+  fi
+  usermod -l "$name" -d "/home/$name" "$cur"
+  groupmod -n "$name" "$(getent group 1000 | cut -d: -f1)"
+fi
+
+# A fresh home volume, or an emptyDir over the cache, mounts root-owned.
+install -d "/home/$name" /var/cache/claude-remote
+chown 1000:1000 "/home/$name" /var/cache/claude-remote
+
+# So do volumes below the home, and fsGroup would expose the host key. Each
+# root-owned mount root, never its contents, goes to the agent, through an
+# open fd checked against the path, so a swapped symlink cannot redirect it.
+awk -v p="/home/$name/" 'index($5, p) == 1 { print $5 }' /proc/self/mountinfo |
+  while IFS= read -r m; do
+    case "$m" in
+      *\\*) printf 'claude-remote: skipping mount with an escaped path: %s\n' "$m" >&2; continue ;;
+    esac
+    (
+      exec 3<"$m"
+      [ "$(readlink /proc/self/fd/3)" = "$m" ] && [ -d /proc/self/fd/3 ] || exit 0
+      [ "$(stat -L -c %u /proc/self/fd/3)" = 0 ] || exit 0
+      chown 1000:1000 /proc/self/fd/3
+    ) || echo "claude-remote: could not hand $m to $name, continuing" >&2
+  done
+
+printf 'AllowUsers %s\n' "$name" > /etc/ssh/sshd_config.d/20-claude-remote-user.conf

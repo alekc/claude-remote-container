@@ -1,0 +1,35 @@
+#!/bin/sh
+# Names the agent account after $USER, installs the mounted host key and
+# authorized_keys into root-owned paths, then runs sshd.
+set -eu
+
+/usr/local/libexec/claude-remote/set-user "${USER:-}"
+
+hostkey=/mnt/claude-remote/hostkey/ssh_host_ed25519_key
+keys=/mnt/claude-remote/authorized-keys/authorized_keys
+
+for f in "$hostkey" "$keys"; do
+  [ -s "$f" ] || { echo "claude-remote: $f is missing or empty, mount it" >&2; exit 1; }
+done
+
+# A Secret without defaultMode 0400, or with fsGroup 1000, would hand the agent
+# the server's identity. Anything but a clean "denied" refuses to start.
+# shellcheck disable=SC2016
+r=$(setpriv --reuid=1000 --regid=1000 --init-groups \
+  sh -c 'test -r "$1" && echo readable || echo denied' sh "$hostkey" 2>&1) || true
+if [ "$r" != denied ]; then
+  echo "claude-remote: $hostkey is readable by uid 1000 ($r), mount it 0400 root-owned" >&2
+  exit 1
+fi
+
+install -o root -g root -m 0400 "$hostkey" /etc/ssh/ssh_host_ed25519_key
+install -d -o root -g root -m 0755 /etc/ssh/authorized_keys
+install -o root -g root -m 0644 "$keys" "/etc/ssh/authorized_keys/$USER"
+
+# Defaults are a convenience: a failure is reported, never blocks login.
+env -i HOME="/home/$USER" PATH=/usr/local/bin:/usr/bin:/bin \
+  setpriv --reuid=1000 --regid=1000 --init-groups /usr/local/libexec/claude-remote/seed-home \
+  || echo "claude-remote: seeding home defaults failed, continuing" >&2
+
+install -d -m 0755 /run/sshd
+exec /usr/sbin/sshd -D -e
