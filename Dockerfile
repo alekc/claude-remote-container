@@ -271,8 +271,11 @@ RUN HOME=/tmp/brew-home NONINTERACTIVE=1 HOMEBREW_NO_ANALYTICS=1 \
 USER root
 
 COPY rootfs/ /
+# Sourced at the top: bash.bashrc returns early when non-interactive, and bash
+# reads it for `ssh host cmd` too. The profile prints nothing, so scp is safe.
 RUN chmod 0755 /usr/local/sbin/claude-remote-entrypoint /usr/local/libexec/claude-remote/* \
-  && echo '. /etc/profile.d/claude-remote.sh' >> /etc/bash.bashrc
+  && sed -i '1i . /etc/profile.d/claude-remote.sh' /etc/bash.bashrc \
+  && head -n1 /etc/bash.bashrc | grep -qx '. /etc/profile.d/claude-remote.sh'
 
 EXPOSE 2222
 ENTRYPOINT ["/usr/bin/tini", "--", "/usr/local/sbin/claude-remote-entrypoint"]

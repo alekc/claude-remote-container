@@ -1,5 +1,5 @@
 # Every shell on the host: ssh logins read it via /etc/profile, herdr panes
-# (interactive, non-login) via /etc/bash.bashrc.
+# and `ssh host cmd` via the top of /etc/bash.bashrc. Must print nothing.
 export HOMEBREW_NO_ANALYTICS=1 HELM_PLUGINS=/opt/helm/plugins CHECKPOINT_DISABLE=1
 export NPM_CONFIG_PREFIX="$HOME/.local" GOBIN="$HOME/.local/bin"
 # Caches live off the home volume, so a restart empties them. Go's module
