@@ -55,7 +55,7 @@ for p in diff s3 unittest schema; do
 done
 
 set_user=/usr/local/libexec/claude-remote/set-user
-for bad in '' root daemon sudo 'Bad Name'; do
+for bad in '' root daemon sudo linuxbrew 'Bad Name'; do
   check sh -c "! $set_user '$bad' 2>/dev/null"
 done
 # Refused before any change, not halfway through the rename.

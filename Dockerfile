@@ -263,11 +263,16 @@ RUN npm install --global --prefix /opt/ccstatusline --cache /tmp/npm-cache \
 
 # Homebrew is the scratch tier: owned by the agent user, so installs need no
 # sudo, and outside the home volume, so they reset on every restart.
+# The installer is pinned to a commit, which fixes its content; it then clones
+# Homebrew's latest release over git, which no checksum here can pin.
 RUN install -d -o 1000 -g 1000 /home/linuxbrew
 USER 1000:1000
-RUN HOME=/tmp/brew-home NONINTERACTIVE=1 HOMEBREW_NO_ANALYTICS=1 \
-    bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" \
-  && rm -rf /tmp/brew-home
+# renovate: datasource=git-refs depName=https://github.com/Homebrew/install branch=main
+ARG HOMEBREW_INSTALL_REF=7a3f48c7e498d7df3237fd41c30f4d492857edf4
+RUN curl -fsSL --proto '=https' -o /tmp/brew-install.sh \
+    "https://raw.githubusercontent.com/Homebrew/install/${HOMEBREW_INSTALL_REF}/install.sh" \
+  && HOME=/tmp/brew-home NONINTERACTIVE=1 HOMEBREW_NO_ANALYTICS=1 bash /tmp/brew-install.sh \
+  && rm -rf /tmp/brew-home /tmp/brew-install.sh
 USER root
 
 COPY rootfs/ /

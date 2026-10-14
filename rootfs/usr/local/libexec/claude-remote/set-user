@@ -7,6 +7,8 @@ name=${1:-}
 case "$name" in
   '') echo "claude-remote: set USER to the agent's login name" >&2; exit 1 ;;
   root) echo "claude-remote: USER must not be root" >&2; exit 1 ;;
+  # /home/$USER is the home volume, which would hide Homebrew's prefix.
+  linuxbrew) echo "claude-remote: USER must not be linuxbrew" >&2; exit 1 ;;
 esac
 if ! printf '%s' "$name" | grep -Eq '^[a-z_][a-z0-9_-]{0,31}$'; then
   echo "claude-remote: USER '$name' is not a valid login name" >&2

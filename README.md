@@ -46,7 +46,7 @@ The entrypoint refuses to start unless all of these are set:
 
 | Input | Content |
 | --- | --- |
-| `USER` env var | The agent's login name. The uid 1000 account is renamed to it, and it is the only user `sshd` admits. Not `root`, not an existing system account. |
+| `USER` env var | The agent's login name. The uid 1000 account is renamed to it, and it is the only user `sshd` admits. Not `root`, not `linuxbrew`, not an existing system account or group. |
 | `/mnt/claude-remote/hostkey/ssh_host_ed25519_key` | The SSH host key, unreadable by uid 1000. The image ships none. |
 | `/mnt/claude-remote/authorized-keys/authorized_keys` | Keys allowed to log in as `$USER`. |
 
@@ -120,8 +120,8 @@ on native amd64.
 ## Updates
 
 Renovate tracks the base image digest, every tool version (a `# renovate:`
-comment above each `ARG`) and the pinned action digests, after a 3-day release
-age.
+comment above each `ARG`), the Homebrew installer's pinned commit and the
+pinned action digests, after a 3-day release age.
 
 | PR | Contents | Merges itself |
 | --- | --- | --- |
