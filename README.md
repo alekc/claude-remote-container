@@ -47,11 +47,14 @@ The entrypoint refuses to start unless all of these are set:
 | Input | Content |
 | --- | --- |
 | `USER` env var | The agent's login name. The uid 1000 account is renamed to it, and it is the only user `sshd` admits. Not `root`, not an existing system account. |
-| `/mnt/claude-remote/hostkey/ssh_host_ed25519_key` | The SSH host key. The image ships none. |
+| `/mnt/claude-remote/hostkey/ssh_host_ed25519_key` | The SSH host key, unreadable by uid 1000. The image ships none. |
 | `/mnt/claude-remote/authorized-keys/authorized_keys` | Keys allowed to log in as `$USER`. |
 
 The keys are copied to root-owned paths before `sshd` starts, so the agent user
-cannot change who may log in. `/home/$USER` is expected to be a volume, mounted
+cannot change who may log in. The host key must not be readable by uid 1000, or
+the entrypoint refuses to start: in Kubernetes mount its Secret with
+`defaultMode: 0400` and do not set the pod's `fsGroup` to 1000, which makes it
+group-readable; for a bind mount, make the file root-owned and 0400. `/home/$USER` is expected to be a volume, mounted
 at the path matching `USER`; anything the image needs lives outside `/home`
 (`/opt`, `/usr/local`), except Homebrew in `/home/linuxbrew`.
 
@@ -77,9 +80,10 @@ failure is logged without blocking `sshd`. The defaults live in
 Caches are kept off the home volume so they cannot fill it:
 `XDG_CACHE_HOME=/var/cache/claude-remote` covers Go's build cache, uv, pip,
 mise downloads, trivy, helm and Homebrew, and `GOMODCACHE` and npm's cache are
-pointed under it. A restart empties it. Within one container's life it grows in
-the container's writable layer, so in Kubernetes mount an `emptyDir` with a
-`sizeLimit` there. `go install` and `npm install -g` write to `~/.local/bin`,
+pointed under it. Without a volume it lives in the container's writable layer,
+which a new container starts without. In Kubernetes mount an `emptyDir` with a
+`sizeLimit` there: it bounds the growth, survives container restarts, and is
+emptied when the Pod is deleted. `go install` and `npm install -g` write to `~/.local/bin`,
 which persists.
 
 ## Building
@@ -91,11 +95,13 @@ docker run --rm --entrypoint /usr/local/libexec/claude-remote/smoke-test claude-
 
 The smoke test runs every tool's version command, checks that `set-user` rejects
 bad names and renames idempotently, that no host key and no sudo shipped, and
-validates the sshd config.
+validates the sshd config. CI then starts the real entrypoint twice: with a host
+key uid 1000 can read, which must refuse, and with a root-only one, which must
+accept an SSH key login as `$USER` with the home seeded.
 
 On an Apple Silicon machine whose Docker runtime emulates amd64 with Rosetta,
 the final stage fails: Ubuntu 26.04's `tar` needs the `openat2` syscall, which
-Rosetta lacks, and the helm plugin hooks and the Homebrew installer run `tar`.
+Rosetta lacks, and the Homebrew installer runs `tar`.
 The download stages run natively and are unaffected; CI builds the whole image
 on native amd64.
 
@@ -109,6 +115,7 @@ on native amd64.
 | Push to `main` | `latest`, `sha-<short>` |
 | Pull request from this repo | `pr-<number>`, deleted when the PR closes |
 | Pull request from a fork | built and tested, not pushed |
+| Manual run on another branch | built and tested, not pushed |
 
 ## Updates
 

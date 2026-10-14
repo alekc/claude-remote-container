@@ -51,13 +51,16 @@ check shellcheck --version
 check bats --version
 check ccstatusline --version
 for p in diff s3 unittest schema; do
-  check sh -c "helm plugin list | grep -q '^$p[[:space:]]'"
+  check sh -c "helm plugin list | grep -q '^${p}[[:space:]]'"
 done
 
 set_user=/usr/local/libexec/claude-remote/set-user
-for bad in '' root daemon 'Bad Name'; do
+for bad in '' root daemon sudo 'Bad Name'; do
   check sh -c "! $set_user '$bad' 2>/dev/null"
 done
+# Refused before any change, not halfway through the rename.
+check sh -c 'test "$(getent passwd 1000 | cut -d: -f1)" = agent'
+check sh -c 'test "$(getent group 1000 | cut -d: -f1)" = agent'
 check "$set_user" "$name"
 check "$set_user" "$name"
 check sh -c "test \"\$(stat -c %U /home/$name)\" = $name"

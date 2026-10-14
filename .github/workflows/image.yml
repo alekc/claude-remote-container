@@ -56,10 +56,43 @@ jobs:
           docker run --rm --entrypoint /usr/local/libexec/claude-remote/smoke-test
           claude-remote:ci
 
-      # Fork PRs get a read-only token, so only same-repo refs publish.
+      # The real entrypoint: a host key uid 1000 can read stops it, a
+      # root-only one lets a key log in as $USER with the home seeded.
+      - name: SSH login
+        run: |
+          set -euo pipefail
+          d=$(mktemp -d)
+          install -d "$d/hk" "$d/ak"
+          ssh-keygen -q -t ed25519 -N '' -f "$d/hk/ssh_host_ed25519_key"
+          ssh-keygen -q -t ed25519 -N '' -f "$d/client"
+          cp "$d/client.pub" "$d/ak/authorized_keys"
+          mounts=(-v "$d/hk:/mnt/claude-remote/hostkey:ro"
+            -v "$d/ak:/mnt/claude-remote/authorized-keys:ro")
+
+          chmod 0644 "$d/hk/ssh_host_ed25519_key"
+          if out=$(docker run --rm -e USER=ci "${mounts[@]}" claude-remote:ci 2>&1); then
+            echo "::error::started with a host key uid 1000 can read"; exit 1
+          fi
+          grep -q 'readable by uid 1000' <<<"$out" || { echo "$out"; exit 1; }
+
+          sudo chown 0:0 "$d/hk/ssh_host_ed25519_key"
+          sudo chmod 0400 "$d/hk/ssh_host_ed25519_key"
+          docker run -d --name sshd -p 2222:2222 -e USER=ci "${mounts[@]}" claude-remote:ci
+          trap 'docker logs sshd; docker rm -f sshd >/dev/null' EXIT
+          for _ in $(seq 30); do
+            ssh-keyscan -p 2222 127.0.0.1 >/dev/null 2>&1 && break
+            sleep 1
+          done
+          ssh -i "$d/client" -p 2222 -o BatchMode=yes -o StrictHostKeyChecking=no \
+            -o UserKnownHostsFile=/dev/null ci@127.0.0.1 \
+            'bash -lc "test \$(id -un) = ci && test -s ~/.config/ccstatusline/settings.json && helm plugin list | grep -q ^diff"'
+
+      # Fork PRs get a read-only token, so only same-repo refs publish, and a
+      # manual run on a branch has no tag to push.
       - if: >-
+          steps.meta.outputs.tags != '' && (
           github.event_name != 'pull_request' ||
-          github.event.pull_request.head.repo.full_name == github.repository
+          github.event.pull_request.head.repo.full_name == github.repository)
         uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
         with:
           registry: ghcr.io
@@ -67,8 +100,9 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - if: >-
+          steps.meta.outputs.tags != '' && (
           github.event_name != 'pull_request' ||
-          github.event.pull_request.head.repo.full_name == github.repository
+          github.event.pull_request.head.repo.full_name == github.repository)
         uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
           context: .

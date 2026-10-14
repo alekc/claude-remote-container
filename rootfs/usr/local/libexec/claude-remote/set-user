@@ -15,8 +15,9 @@ fi
 
 cur=$(getent passwd 1000 | cut -d: -f1)
 if [ "$cur" != "$name" ]; then
-  if getent passwd "$name" >/dev/null; then
-    echo "claude-remote: USER '$name' is an existing system account" >&2
+  # The group is renamed too, so a name taken by either would fail midway.
+  if getent passwd "$name" >/dev/null || getent group "$name" >/dev/null; then
+    echo "claude-remote: USER '$name' is an existing system account or group" >&2
     exit 1
   fi
   usermod -l "$name" -d "/home/$name" "$cur"

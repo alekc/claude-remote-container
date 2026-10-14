@@ -147,6 +147,36 @@ RUN . /usr/local/lib/fetch.sh; u=https://github.com/jdx/mise/releases/download/v
   f=mise-v${MISE_VERSION}-linux-x64; fetch $u/$f $f; fetch $u/SHASUMS256.txt sums; \
   verify "$(sum_of sums $f)" $f; install -D -m 0755 $f /out/mise
 
+# Helm plugins: each release archive already holds the binary its plugin.yaml
+# runs, so a verified unpack replaces `helm plugin install` and its hooks.
+FROM dl AS helm-diff
+# renovate: datasource=github-releases depName=databus23/helm-diff
+ARG HELM_DIFF_VERSION=3.15.15
+RUN . /usr/local/lib/fetch.sh; u=https://github.com/databus23/helm-diff/releases/download/v${HELM_DIFF_VERSION}; \
+  f=helm-diff-linux-amd64.tgz; fetch $u/$f $f; fetch $u/helm-diff_${HELM_DIFF_VERSION}_checksums.txt sums; \
+  verify "$(sum_of sums $f)" $f; mkdir -p /out; untar_root $f /out
+
+FROM dl AS helm-s3
+# renovate: datasource=github-releases depName=hypnoglow/helm-s3
+ARG HELM_S3_VERSION=0.17.2
+RUN . /usr/local/lib/fetch.sh; u=https://github.com/hypnoglow/helm-s3/releases/download/v${HELM_S3_VERSION}; \
+  f=helm-s3_${HELM_S3_VERSION}_linux_amd64.tar.gz; fetch $u/$f $f; fetch $u/helm-s3_${HELM_S3_VERSION}_checksums.txt sums; \
+  verify "$(sum_of sums $f)" $f; mkdir -p /out/s3; untar_root $f /out/s3
+
+FROM dl AS helm-unittest
+# renovate: datasource=github-releases depName=helm-unittest/helm-unittest
+ARG HELM_UNITTEST_VERSION=1.2.1
+RUN . /usr/local/lib/fetch.sh; u=https://github.com/helm-unittest/helm-unittest/releases/download/v${HELM_UNITTEST_VERSION}; \
+  f=helm-unittest-linux-amd64-${HELM_UNITTEST_VERSION}.tgz; fetch $u/$f $f; fetch $u/helm-unittest-checksum.sha sums; \
+  verify "$(sum_of sums $f)" $f; mkdir -p /out/unittest; untar_root $f /out/unittest
+
+FROM dl AS helm-schema
+# renovate: datasource=github-releases depName=losisin/helm-values-schema-json
+ARG HELM_SCHEMA_VERSION=2.6.0
+RUN . /usr/local/lib/fetch.sh; u=https://github.com/losisin/helm-values-schema-json/releases/download/v${HELM_SCHEMA_VERSION}; \
+  f=helm-values-schema-json_${HELM_SCHEMA_VERSION}_linux_amd64.tgz; fetch $u/$f $f; fetch $u/helm-values-schema-json-checksum.sha sums; \
+  verify "$(sum_of sums $f)" $f; mkdir -p /out/schema; untar_root $f /out/schema
+
 FROM ubuntu:26.04@sha256:f144425ff09be612d6d9ad965196e9cdc23dae1f42110a8a11a3e9a8198759f7
 ARG DEBIAN_FRONTEND=noninteractive
 # The host keys openssh-server's postinst generates would ship in a public
@@ -187,19 +217,10 @@ COPY --from=mise /out/ /usr/local/bin/
 
 # Everything below lives outside /home, which the home volume hides.
 ENV HELM_PLUGINS=/opt/helm/plugins
-# renovate: datasource=github-releases depName=databus23/helm-diff
-ARG HELM_DIFF_VERSION=3.15.15
-# renovate: datasource=github-releases depName=hypnoglow/helm-s3
-ARG HELM_S3_VERSION=0.17.2
-# renovate: datasource=github-releases depName=helm-unittest/helm-unittest
-ARG HELM_UNITTEST_VERSION=1.2.1
-# renovate: datasource=github-releases depName=losisin/helm-values-schema-json
-ARG HELM_SCHEMA_VERSION=2.6.0
-RUN helm plugin install --verify=false https://github.com/databus23/helm-diff --version v${HELM_DIFF_VERSION} \
-  && helm plugin install --verify=false https://github.com/hypnoglow/helm-s3.git --version v${HELM_S3_VERSION} \
-  && helm plugin install --verify=false https://github.com/helm-unittest/helm-unittest.git --version v${HELM_UNITTEST_VERSION} \
-  && helm plugin install --verify=false https://github.com/losisin/helm-values-schema-json.git --version v${HELM_SCHEMA_VERSION} \
-  && rm -rf /root/.cache
+COPY --from=helm-diff /out/ /opt/helm/plugins/
+COPY --from=helm-s3 /out/ /opt/helm/plugins/
+COPY --from=helm-unittest /out/ /opt/helm/plugins/
+COPY --from=helm-schema /out/ /opt/helm/plugins/
 
 ENV UV_TOOL_DIR=/opt/uv/tools UV_TOOL_BIN_DIR=/usr/local/bin UV_PYTHON_PREFERENCE=only-system
 # renovate: datasource=pypi depName=ansible-core
@@ -227,7 +248,7 @@ RUN install -d /etc/mise \
     'idiomatic_version_file_enable_tools = ["go", "node", "python"]' \
     > /etc/mise/config.toml \
   && mise install --system \
-  && MISE_DATA_DIR=/usr/local/share/mise mise reshim \
+  && mise reshim --system \
   && rm -rf /root/.cache /root/.local
 ENV PATH=/usr/local/share/mise/shims:$PATH
 
