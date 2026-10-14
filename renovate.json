@@ -22,12 +22,17 @@
       "extractVersion": "^v?(?<version>.*)$"
     },
     {
+      "description": "One PR for every tool bump; majors still get their own",
+      "matchManagers": ["custom.regex"],
+      "groupName": "tooling"
+    },
+    {
       "description": "Low-risk bumps merge themselves once CI passes",
       "matchUpdateTypes": ["minor", "patch", "digest", "pinDigest"],
       "automerge": true
     },
     {
-      "description": "Base image and tools with a history of breaking minors",
+      "description": "A grouped PR automerges only if every bump in it may, so one of these holds the whole tooling PR for review",
       "matchPackageNames": [
         "ubuntu",
         "cli/cli",
@@ -37,8 +42,15 @@
       "automerge": false
     },
     {
-      "description": "A newer binary rewrites state irreversibly: always reviewed",
+      "description": "Runtime defaults: a minor changes behaviour for every project without its own version file",
+      "matchPackageNames": ["go", "node", "python"],
+      "matchUpdateTypes": ["minor"],
+      "automerge": false
+    },
+    {
+      "description": "A newer binary rewrites state irreversibly: own PR, always reviewed",
       "matchPackageNames": ["opentofu/opentofu", "hashicorp/terraform"],
+      "groupName": "tofu and terraform",
       "automerge": false
     },
     {

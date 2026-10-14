@@ -35,9 +35,11 @@ check infisical --version
 check tofu version
 check terraform version
 check kubectl version --client
+check mise --version
 check go version
 check node --version
 check npm --version
+check python --version
 check ansible --version
 check ansible-lint --version
 check pre-commit --version
@@ -71,5 +73,9 @@ check /usr/sbin/sshd -t -h "$key"
 as_user 'test "$(id -u)" = 1000'
 as_user 'brew --version'
 as_user 'herdr --version && helm plugin list | grep -q ^diff'
+# The user reaches the runtimes through the system shims, at the defaults.
+as_user 'test "$(command -v node)" = /usr/local/share/mise/shims/node'
+as_user 'mise ls --current --offline | grep -c "(system)" | grep -qx 3'
+as_user 'go version && node --version && python --version'
 
 exit "$failed"

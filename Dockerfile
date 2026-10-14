@@ -140,19 +140,12 @@ RUN . /usr/local/lib/fetch.sh; u=https://dl.k8s.io/release/v${KUBECTL_VERSION}/b
   fetch $u/kubectl kubectl; fetch $u/kubectl.sha256 sums; \
   verify "$(cat sums)" kubectl; install -D -m 0755 kubectl /out/kubectl
 
-FROM dl AS go
-# renovate: datasource=golang-version depName=go
-ARG GO_VERSION=1.27.2
-RUN . /usr/local/lib/fetch.sh; f=go${GO_VERSION}.linux-amd64.tar.gz; \
-  fetch https://dl.google.com/go/$f $f; fetch https://dl.google.com/go/$f.sha256 sums; \
-  verify "$(cat sums)" $f; mkdir /out; tar -xzf $f -C /out
-
-FROM dl AS node
-# renovate: datasource=node-version depName=node
-ARG NODE_VERSION=26.11.1
-RUN . /usr/local/lib/fetch.sh; u=https://nodejs.org/dist/v${NODE_VERSION}; \
-  d=node-v${NODE_VERSION}-linux-x64; f=$d.tar.xz; fetch $u/$f $f; fetch $u/SHASUMS256.txt sums; \
-  verify "$(sum_of sums $f)" $f; tar -xJf $f; mv $d /out
+FROM dl AS mise
+# renovate: datasource=github-releases depName=jdx/mise
+ARG MISE_VERSION=2026.10.9
+RUN . /usr/local/lib/fetch.sh; u=https://github.com/jdx/mise/releases/download/v${MISE_VERSION}; \
+  f=mise-v${MISE_VERSION}-linux-x64; fetch $u/$f $f; fetch $u/SHASUMS256.txt sums; \
+  verify "$(sum_of sums $f)" $f; install -D -m 0755 $f /out/mise
 
 FROM ubuntu:26.04@sha256:f144425ff09be612d6d9ad965196e9cdc23dae1f42110a8a11a3e9a8198759f7
 ARG DEBIAN_FRONTEND=noninteractive
@@ -161,7 +154,7 @@ ARG DEBIAN_FRONTEND=noninteractive
 RUN apt-get update \
   && apt-get install -y --no-install-recommends \
     bash-completion bats build-essential ca-certificates curl direnv dnsutils \
-    file git gnupg iproute2 iputils-ping jq less locales netcat-openbsd \
+    file git gnupg iproute2 iputils-ping jq less libatomic1 locales netcat-openbsd \
     openssh-client openssh-server procps python3 python3-pip python3-venv \
     ripgrep rsync shellcheck tini tmux unzip vim xz-utils zip \
   && rm -rf /var/lib/apt/lists/* /etc/ssh/ssh_host_*
@@ -190,10 +183,7 @@ COPY --from=infisical /out/ /usr/local/bin/
 COPY --from=tofu /out/ /usr/local/bin/
 COPY --from=terraform /out/ /usr/local/bin/
 COPY --from=kubectl /out/ /usr/local/bin/
-COPY --from=go /out/go /usr/local/go
-COPY --from=node /out /usr/local/lib/nodejs
-RUN ln -s /usr/local/go/bin/go /usr/local/go/bin/gofmt /usr/local/bin/ \
-  && for b in node npm npx corepack; do ln -s /usr/local/lib/nodejs/bin/$b /usr/local/bin/$b; done
+COPY --from=mise /out/ /usr/local/bin/
 
 # Everything below lives outside /home, which the home volume hides.
 ENV HELM_PLUGINS=/opt/helm/plugins
@@ -218,9 +208,28 @@ ARG ANSIBLE_CORE_VERSION=2.21.5
 ARG ANSIBLE_LINT_VERSION=26.10.1
 # renovate: datasource=pypi depName=pre-commit
 ARG PRE_COMMIT_VERSION=4.7.0
-RUN uv tool install --no-cache ansible-core==${ANSIBLE_CORE_VERSION} \
-  && uv tool install --no-cache ansible-lint==${ANSIBLE_LINT_VERSION} \
-  && uv tool install --no-cache pre-commit==${PRE_COMMIT_VERSION}
+RUN uv tool install --no-cache --python /usr/bin/python3 ansible-core==${ANSIBLE_CORE_VERSION} \
+  && uv tool install --no-cache --python /usr/bin/python3 ansible-lint==${ANSIBLE_LINT_VERSION} \
+  && uv tool install --no-cache --python /usr/bin/python3 pre-commit==${PRE_COMMIT_VERSION}
+
+# Language runtimes come from mise, tfenv-style: these are the defaults, and a
+# project's .go-version, .nvmrc, .python-version or mise.toml picks another,
+# installed on first use into the home volume. mise verifies each download.
+# renovate: datasource=golang-version depName=go
+ARG GO_VERSION=1.27.2
+# renovate: datasource=node-version depName=node
+ARG NODE_VERSION=26.11.1
+# renovate: datasource=python-version depName=python
+ARG PYTHON_VERSION=3.14.8
+RUN install -d /etc/mise \
+  && printf '%s\n' '[tools]' "go = \"${GO_VERSION}\"" "node = \"${NODE_VERSION}\"" \
+    "python = \"${PYTHON_VERSION}\"" '[settings]' \
+    'idiomatic_version_file_enable_tools = ["go", "node", "python"]' \
+    > /etc/mise/config.toml \
+  && mise install --system \
+  && MISE_DATA_DIR=/usr/local/share/mise mise reshim \
+  && rm -rf /root/.cache /root/.local
+ENV PATH=/usr/local/share/mise/shims:$PATH
 
 # Homebrew is the scratch tier: owned by the agent user, so installs need no
 # sudo, and outside the home volume, so they reset on every restart.

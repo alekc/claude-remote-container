@@ -12,12 +12,31 @@ to run as a single Kubernetes pod with a persistent home volume.
 - Kubernetes and IaC tooling: `kubectl`, `helm` (with the diff, s3, unittest and
   values-schema plugins), `helmfile`, `helm-docs`, `kubeconform`, `vals`,
   `velero`, `tofu`, `terraform`, `ansible-core`, `ansible-lint`.
+- Language runtimes through [mise](https://mise.jdx.dev): `go`, `node`, `python`.
 - General tooling: `gh`, `glab`, `infisical`, `rclone`, `trivy`, `yq`, `uv`,
-  `go`, `node`, `pre-commit`, `herdr`, Homebrew.
+  `pre-commit`, `herdr`, Homebrew.
 
 Every downloaded binary is checked against the publisher's SHA-256 before it is
 installed. herdr publishes no checksums file, so its hash comes from the GitHub
-release API's asset digest.
+release API's asset digest. mise verifies the runtimes itself: go against its
+`.sha256`, node against GPG-signed `SHASUMS256`, python by GitHub attestation.
+
+## Language runtimes
+
+mise works like tfenv for go, node and python. The image installs one default
+version of each into `/usr/local/share/mise` and puts its shims on `PATH`. A
+project picks another with `.go-version`, `.nvmrc` / `.node-version`,
+`.python-version` or a `mise.toml`; the shim installs it on first use into
+`~/.local/share/mise`, on the home volume, so it survives a restart.
+
+```bash
+cd ~/project && echo 24 > .nvmrc && node --version   # v24.x, installed on demand
+mise use -g python@3.13                             # change the default for this user
+mise ls                                             # (system) = image default
+```
+
+A `mise.toml` must be trusted once with `mise trust`. Ubuntu's own `python3`
+stays at `/usr/bin/python3`; ansible, ansible-lint and pre-commit run on it.
 
 ## Runtime contract
 
@@ -77,11 +96,17 @@ on native amd64.
 ## Updates
 
 Renovate tracks the base image digest, every tool version (a `# renovate:`
-comment above each `ARG`) and the pinned action digests. Minor, patch and digest
-bumps merge themselves once CI passes, after a 3-day release age. Never
-automerged: the base image, `gh`, `glab`, `infisical`, and `tofu` / `terraform`,
-because a newer binary than the one on the workstation rewrites state
-irreversibly. `kubectl` stays on the cluster's minor (1.36).
+comment above each `ARG`) and the pinned action digests, after a 3-day release
+age.
+
+| PR | Contents | Merges itself |
+| --- | --- | --- |
+| `tooling` | Every tool and runtime minor or patch bump | Only if every bump in it may: a `gh`, `glab`, `infisical` bump or a go / node / python minor holds it for review |
+| `tooling` (major) | Major bumps, in a separate PR | No |
+| `tofu and terraform` | Both binaries | Never: a binary newer than the workstation's rewrites state irreversibly |
+| base image, actions | Separate PRs | Actions yes, base image no |
+
+`kubectl` stays on the cluster's minor (1.36).
 
 ## Not done yet
 
@@ -89,4 +114,3 @@ irreversibly. `kubectl` stays on the cluster's minor (1.36).
   Claude Code settings).
 - A herdr binary left in `~/.local/bin` on the home volume shadows the image's
   copy; decide whether the image or the user owns it.
-- Confirm the GHCR package is public after the first push.

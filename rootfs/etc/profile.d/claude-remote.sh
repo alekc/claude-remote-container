@@ -5,8 +5,13 @@ export NPM_CONFIG_PREFIX="$HOME/.local"
 if [ -x /home/linuxbrew/.linuxbrew/bin/brew ] && [ -z "${HOMEBREW_PREFIX:-}" ]; then
   eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
 fi
-case ":$PATH:" in
-  *":$HOME/.local/bin:"*) ;;
-  *) PATH="$HOME/.local/bin:$PATH" ;;
-esac
+# Prepended last-first, so the order is: own bin, mise shims (own versions,
+# then the image's defaults), Homebrew, system.
+for d in /usr/local/share/mise/shims "$HOME/.local/share/mise/shims" "$HOME/.local/bin"; do
+  case ":$PATH:" in
+    *":$d:"*) ;;
+    *) PATH="$d:$PATH" ;;
+  esac
+done
+unset d
 export PATH
