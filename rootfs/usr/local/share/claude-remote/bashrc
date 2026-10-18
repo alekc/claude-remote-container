@@ -1,0 +1,7 @@
+# Interactive bash defaults, sourced at the end of /etc/bash.bashrc.
+. /usr/local/share/claude-remote/aliases.sh
+if command -v kubectl >/dev/null; then
+  . <(kubectl completion bash)
+  complete -o default -F __start_kubectl k
+fi
+command -v starship >/dev/null && eval "$(starship init bash)"

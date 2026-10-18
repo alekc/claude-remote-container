@@ -9,6 +9,12 @@ if [ "$(id -u)" = 0 ]; then
 fi
 share=/usr/local/share/claude-remote
 
+# Without a ~/.zshrc, zsh runs its new-user wizard on every login.
+if [ ! -e "$HOME/.zshrc" ] && [ ! -L "$HOME/.zshrc" ]; then
+  printf '%s\n' '# Personal zsh settings; image defaults: /usr/local/share/claude-remote/zshrc' \
+    > "$HOME/.zshrc"
+fi
+
 cfg=$HOME/.config/ccstatusline/settings.json
 if [ ! -e "$cfg" ] && [ ! -L "$cfg" ]; then
   install -D -m 0644 "$share/ccstatusline-settings.json" "$cfg"
