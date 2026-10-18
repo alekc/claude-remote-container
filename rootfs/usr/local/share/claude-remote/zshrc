@@ -1,0 +1,8 @@
+# Interactive zsh defaults, sourced at the end of /etc/zsh/zshrc, so before
+# ~/.zshrc, which can override any of it.
+HISTFILE=${HISTFILE:-$HOME/.zsh_history} HISTSIZE=50000 SAVEHIST=50000
+setopt share_history hist_ignore_dups hist_ignore_space
+(( $+functions[compdef] )) || { autoload -Uz compinit && compinit; }
+. /usr/local/share/claude-remote/aliases.sh
+(( $+commands[kubectl] )) && . <(kubectl completion zsh) && compdef k=kubectl
+(( $+commands[starship] )) && eval "$(starship init zsh)"

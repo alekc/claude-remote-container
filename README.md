@@ -17,11 +17,27 @@ to run as a single Kubernetes pod with a persistent home volume.
   `pre-commit`, `herdr`, Homebrew.
 - [ccstatusline](https://github.com/sirmalloc/ccstatusline) as the Claude Code
   status line, seeded with a default layout.
+- zsh as the agent's login shell, with [starship](https://starship.rs) and
+  `bat`; see [Shell](#shell).
 
 Every downloaded binary is checked against the publisher's SHA-256 before it is
 installed. herdr publishes no checksums file, so its hash comes from the GitHub
 release API's asset digest. mise verifies the runtimes itself: go against its
 `.sha256`, node against GPG-signed `SHASUMS256`, python by GitHub attestation.
+
+## Shell
+
+The agent logs in to zsh. `/etc/zsh/zshenv` sources the same profile as bash,
+so `ssh host cmd` gets the same `PATH` in either shell. Interactive shells, zsh
+and bash alike, get the image defaults from `/usr/local/share/claude-remote/`:
+
+- aliases `ll` (`ls -la`), `la` (`ls -A`), `k` (`kubectl`, with completion) and
+  `cat` (`bat --paging=never`, which prints the file unchanged off a terminal);
+- the starship prompt, and in zsh a 50,000-line shared history.
+
+They load before `~/.zshrc` and `~/.bashrc`, so anything personal goes there,
+on the home volume, along with `~/.config/starship.toml`. A one-line `~/.zshrc`
+is seeded on first start, which keeps zsh's new-user wizard away.
 
 ## Language runtimes
 

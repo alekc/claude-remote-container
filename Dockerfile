@@ -140,6 +140,14 @@ RUN . /usr/local/lib/fetch.sh; u=https://dl.k8s.io/release/v${KUBECTL_VERSION}/b
   fetch $u/kubectl kubectl; fetch $u/kubectl.sha256 sums; \
   verify "$(cat sums)" kubectl; install -D -m 0755 kubectl /out/kubectl
 
+FROM dl AS starship
+# renovate: datasource=github-releases depName=starship/starship
+ARG STARSHIP_VERSION=1.27.0
+# The .sha256 file holds the bare hash, no file name.
+RUN . /usr/local/lib/fetch.sh; u=https://github.com/starship/starship/releases/download/v${STARSHIP_VERSION}; \
+  f=starship-x86_64-unknown-linux-musl.tar.gz; fetch $u/$f $f; fetch $u/$f.sha256 sums; \
+  verify "$(cut -d' ' -f1 sums)" $f; tar -xzf $f starship; install -D -m 0755 starship /out/starship
+
 FROM dl AS mise
 # renovate: datasource=github-releases depName=jdx/mise
 ARG MISE_VERSION=2026.10.9
@@ -183,15 +191,16 @@ ARG DEBIAN_FRONTEND=noninteractive
 # image; the entrypoint installs the real one from a mount.
 RUN apt-get update \
   && apt-get install -y --no-install-recommends \
-    bash-completion bats build-essential ca-certificates curl direnv dnsutils \
+    bash-completion bat bats build-essential ca-certificates curl direnv dnsutils \
     file git gnupg iproute2 iputils-ping jq less libatomic1 locales netcat-openbsd \
     openssh-client openssh-server procps python3 python3-pip python3-venv \
-    ripgrep rsync shellcheck tini tmux unzip vim xz-utils zip \
-  && rm -rf /var/lib/apt/lists/* /etc/ssh/ssh_host_*
+    ripgrep rsync shellcheck tini tmux unzip vim xz-utils zip zsh \
+  && rm -rf /var/lib/apt/lists/* /etc/ssh/ssh_host_* \
+  && ln -s /usr/bin/batcat /usr/local/bin/bat
 
 # The base image's uid 1000 becomes a neutral agent account without sudo or
 # adm; the entrypoint renames it to $USER on every start.
-RUN usermod -l agent -d /home/agent -c agent ubuntu \
+RUN usermod -l agent -d /home/agent -c agent -s /usr/bin/zsh ubuntu \
   && groupmod -n agent ubuntu \
   && for g in sudo adm; do gpasswd -d agent "$g" >/dev/null 2>&1 || true; done \
   && rm -rf /home/ubuntu
@@ -214,6 +223,7 @@ COPY --from=tofu /out/ /usr/local/bin/
 COPY --from=terraform /out/ /usr/local/bin/
 COPY --from=kubectl /out/ /usr/local/bin/
 COPY --from=mise /out/ /usr/local/bin/
+COPY --from=starship /out/ /usr/local/bin/
 
 # Everything below lives outside /home, which the home volume hides.
 ENV HELM_PLUGINS=/opt/helm/plugins
@@ -277,10 +287,14 @@ USER root
 
 COPY rootfs/ /
 # Sourced at the top: bash.bashrc returns early when non-interactive, and bash
-# reads it for `ssh host cmd` too. The profile prints nothing, so scp is safe.
+# reads it for `ssh host cmd` too. zsh reads zshenv for every shell. The
+# profile prints nothing, so scp is safe. Interactive defaults go last.
 RUN chmod 0755 /usr/local/sbin/claude-remote-entrypoint /usr/local/libexec/claude-remote/* \
   && sed -i '1i . /etc/profile.d/claude-remote.sh' /etc/bash.bashrc \
-  && head -n1 /etc/bash.bashrc | grep -qx '. /etc/profile.d/claude-remote.sh'
+  && head -n1 /etc/bash.bashrc | grep -qx '. /etc/profile.d/claude-remote.sh' \
+  && echo '. /etc/profile.d/claude-remote.sh' >> /etc/zsh/zshenv \
+  && echo '. /usr/local/share/claude-remote/bashrc' >> /etc/bash.bashrc \
+  && echo '. /usr/local/share/claude-remote/zshrc' >> /etc/zsh/zshrc
 
 EXPOSE 2222
 ENTRYPOINT ["/usr/bin/tini", "--", "/usr/local/sbin/claude-remote-entrypoint"]

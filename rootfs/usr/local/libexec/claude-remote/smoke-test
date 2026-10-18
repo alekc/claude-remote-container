@@ -97,5 +97,18 @@ as_user "$seed && jq -e '.lines | length > 0' ~/.config/ccstatusline/settings.js
 as_user "jq -e '.statusLine.command == \"ccstatusline\"' ~/.claude/settings.json"
 as_user "echo '{\"lines\":[[]]}' > ~/.config/ccstatusline/settings.json && $seed && jq -e '.lines == [[]]' ~/.config/ccstatusline/settings.json"
 as_user "rm ~/.config/ccstatusline/settings.json && $seed && echo '{\"model\":{\"display_name\":\"smoke\"}}' | ccstatusline | grep -q smoke"
+as_user "test -s ~/.zshrc && echo keep > ~/.zshrc && $seed && grep -qx keep ~/.zshrc"
+
+# zsh is the login shell: same PATH for `ssh host cmd`, defaults interactively.
+check zsh --version
+check starship --version
+check bat --version
+check sh -c 'printf "a\tb\n" > /tmp/bat.t && bat --paging=never /tmp/bat.t | cmp - /tmp/bat.t'
+check sh -c "test \"\$(getent passwd $name | cut -d: -f7)\" = /usr/bin/zsh"
+check su - "$name" -c 'test "$(command -v node)" = /usr/local/share/mise/shims/node'
+check su "$name" -c "env -i HOME=/home/$name PATH=/usr/bin:/bin /usr/bin/zsh -c 'test \"\$(command -v node)\" = /usr/local/share/mise/shims/node'"
+check su - "$name" -c 'test -z "$(zsh -c true 2>&1)"'
+check su - "$name" -c "zsh -ic 'alias ll k cat && whence -w _kubectl && test -n \"\$STARSHIP_SHELL\"'"
+as_user "bash -ic 'alias ll k && complete -p k && test -n \"\$STARSHIP_SHELL\"'"
 
 exit "$failed"
