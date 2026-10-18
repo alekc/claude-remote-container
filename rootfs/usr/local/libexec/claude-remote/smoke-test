@@ -97,7 +97,7 @@ as_user "$seed && jq -e '.lines | length > 0' ~/.config/ccstatusline/settings.js
 as_user "jq -e '.statusLine.command == \"ccstatusline\"' ~/.claude/settings.json"
 as_user "echo '{\"lines\":[[]]}' > ~/.config/ccstatusline/settings.json && $seed && jq -e '.lines == [[]]' ~/.config/ccstatusline/settings.json"
 as_user "rm ~/.config/ccstatusline/settings.json && $seed && echo '{\"model\":{\"display_name\":\"smoke\"}}' | ccstatusline | grep -q smoke"
-as_user "test -s ~/.zshrc && echo keep > ~/.zshrc && $seed && grep -qx keep ~/.zshrc"
+as_user "test -s ~/.zshrc && echo '# keep' > ~/.zshrc && $seed && grep -qx '# keep' ~/.zshrc"
 
 # zsh is the login shell: same PATH for `ssh host cmd`, defaults interactively.
 check zsh --version
