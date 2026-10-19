@@ -99,6 +99,15 @@ is missing, and never over an existing one: the ccstatusline layout to
 failure is logged without blocking `sshd`. The defaults live in
 `/usr/local/share/claude-remote`.
 
+In Kubernetes, `sshd` starts each login without the pod's environment, so
+kubectl would miss the in-cluster `KUBERNETES_SERVICE_HOST` and `PORT` and fall
+back to `localhost:8080`. The entrypoint copies both into `/etc/environment`,
+which `pam_env` loads for every SSH session. When a service account token is
+mounted, `seed-home` also writes `~/.kube/config` with an `in-cluster` context
+that reads the token through `tokenFile`, so rotation keeps working. kubectl
+ignores in-cluster config once any kubeconfig exists, so add other contexts to
+that file beside `in-cluster` rather than replacing it.
+
 Caches are kept off the home volume so they cannot fill it:
 `XDG_CACHE_HOME=/var/cache/claude-remote` covers Go's build cache, uv, pip,
 mise downloads, trivy, helm and Homebrew, and `GOMODCACHE` and npm's cache are

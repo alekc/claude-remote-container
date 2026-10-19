@@ -15,6 +15,36 @@ if [ ! -e "$HOME/.zshrc" ] && [ ! -L "$HOME/.zshrc" ]; then
     > "$HOME/.zshrc"
 fi
 
+# kubectl skips in-cluster config once any kubeconfig exists, so the service
+# account becomes a named context that other contexts can sit beside.
+sa=/var/run/secrets/kubernetes.io/serviceaccount
+kc=$HOME/.kube/config
+if [ -r "$sa/token" ] && [ ! -e "$kc" ] && [ ! -L "$kc" ]; then
+  install -d -m 0700 "$HOME/.kube"
+  ns=$(cat "$sa/namespace" 2>/dev/null || echo default)
+  (umask 077 && cat > "$kc" <<EOF
+apiVersion: v1
+kind: Config
+clusters:
+- name: in-cluster
+  cluster:
+    server: https://kubernetes.default.svc
+    certificate-authority: $sa/ca.crt
+users:
+- name: in-cluster
+  user:
+    tokenFile: $sa/token
+contexts:
+- name: in-cluster
+  context:
+    cluster: in-cluster
+    user: in-cluster
+    namespace: $ns
+current-context: in-cluster
+EOF
+  )
+fi
+
 cfg=$HOME/.config/ccstatusline/settings.json
 if [ ! -e "$cfg" ] && [ ! -L "$cfg" ]; then
   install -D -m 0644 "$share/ccstatusline-settings.json" "$cfg"
