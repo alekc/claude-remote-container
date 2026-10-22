@@ -35,6 +35,9 @@ check infisical --version
 check tofu version
 check terraform version
 check kubectl version --client
+check kubectx --version
+check kubens --version
+check fzf --version
 check mise --version
 check go version
 check node --version
