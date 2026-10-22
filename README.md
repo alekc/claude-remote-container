@@ -9,9 +9,10 @@ to run as a single Kubernetes pod with a persistent home volume.
 - Ubuntu 26.04, `openssh-server` on port 2222, `tini` as PID 1.
 - An unprivileged agent account (uid 1000, no sudo, no `adm`), named at start
   from `$USER`.
-- Kubernetes and IaC tooling: `kubectl`, `helm` (with the diff, s3, unittest and
-  values-schema plugins), `helmfile`, `helm-docs`, `kubeconform`, `vals`,
-  `velero`, `tofu`, `terraform`, `ansible-core`, `ansible-lint`.
+- Kubernetes and IaC tooling: `kubectl`, `kubectx` and `kubens` (with `fzf` for
+  their pickers), `helm` (with the diff, s3, unittest and values-schema
+  plugins), `helmfile`, `helm-docs`, `kubeconform`, `vals`, `velero`, `tofu`,
+  `terraform`, `ansible-core`, `ansible-lint`.
 - Language runtimes through [mise](https://mise.jdx.dev): `go`, `node`, `python`.
 - General tooling: `gh`, `glab`, `infisical`, `rclone`, `trivy`, `yq`, `uv`,
   `pre-commit`, `herdr`, Homebrew.

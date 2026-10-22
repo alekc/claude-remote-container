@@ -140,6 +140,13 @@ RUN . /usr/local/lib/fetch.sh; u=https://dl.k8s.io/release/v${KUBECTL_VERSION}/b
   fetch $u/kubectl kubectl; fetch $u/kubectl.sha256 sums; \
   verify "$(cat sums)" kubectl; install -D -m 0755 kubectl /out/kubectl
 
+FROM dl AS kubectx
+# renovate: datasource=github-releases depName=ahmetb/kubectx
+ARG KUBECTX_VERSION=0.11.0
+RUN . /usr/local/lib/fetch.sh; u=https://github.com/ahmetb/kubectx/releases/download/v${KUBECTX_VERSION}; \
+  fetch $u/checksums.txt sums; for t in kubectx kubens; do f=${t}_v${KUBECTX_VERSION}_linux_x86_64.tar.gz; \
+  fetch $u/$f $f; verify "$(sum_of sums $f)" $f; tar -xzf $f $t; install -D -m 0755 $t /out/$t; done
+
 FROM dl AS starship
 # renovate: datasource=github-releases depName=starship/starship
 ARG STARSHIP_VERSION=1.27.0
@@ -192,7 +199,7 @@ ARG DEBIAN_FRONTEND=noninteractive
 RUN apt-get update \
   && apt-get install -y --no-install-recommends \
     bash-completion bat bats build-essential ca-certificates curl direnv dnsutils \
-    file git gnupg iproute2 iputils-ping jq less libatomic1 locales netcat-openbsd \
+    file fzf git gnupg iproute2 iputils-ping jq less libatomic1 locales netcat-openbsd \
     openssh-client openssh-server procps python3 python3-pip python3-venv \
     ripgrep rsync shellcheck tini tmux unzip vim xz-utils zip zsh \
   && rm -rf /var/lib/apt/lists/* /etc/ssh/ssh_host_* \
@@ -225,6 +232,7 @@ COPY --from=infisical /out/ /usr/local/bin/
 COPY --from=tofu /out/ /usr/local/bin/
 COPY --from=terraform /out/ /usr/local/bin/
 COPY --from=kubectl /out/ /usr/local/bin/
+COPY --from=kubectx /out/ /usr/local/bin/
 COPY --from=mise /out/ /usr/local/bin/
 COPY --from=starship /out/ /usr/local/bin/
 
