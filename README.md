@@ -39,6 +39,11 @@ They load before `~/.zshrc` and `~/.bashrc`, so anything personal goes there,
 on the home volume, along with `~/.config/starship.toml`. A one-line `~/.zshrc`
 is seeded on first start, which keeps zsh's new-user wizard away.
 
+sshd accepts the client's `LANG` and `LC_*`. The image builds `en_GB.UTF-8` and
+`en_US.UTF-8`; for any other client locale, or none, the profile sets
+`LC_ALL=C.UTF-8`, because libc otherwise falls back to ASCII and zsh garbles
+non-Latin input such as Cyrillic.
+
 ## Language runtimes
 
 mise works like tfenv for go, node and python. The image installs one default

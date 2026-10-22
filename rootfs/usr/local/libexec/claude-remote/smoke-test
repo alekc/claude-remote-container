@@ -108,6 +108,11 @@ check sh -c "test \"\$(getent passwd $name | cut -d: -f7)\" = /usr/bin/zsh"
 check su - "$name" -c 'test "$(command -v node)" = /usr/local/share/mise/shims/node'
 check su "$name" -c "env -i HOME=/home/$name PATH=/usr/bin:/bin /usr/bin/zsh -c 'test \"\$(command -v node)\" = /usr/local/share/mise/shims/node'"
 check su - "$name" -c 'test -z "$(zsh -c true 2>&1)"'
+# Cyrillic is one character per letter whatever locale the client forwards.
+check sh -c 'locale -a | grep -qx en_GB.utf8'
+for l in LANG=en_GB.UTF-8 LANG=xx_XX.UTF-8 LC_CTYPE=UTF-8 LANG=; do
+  check su "$name" -c "env -i HOME=/home/$name $l /usr/bin/zsh -c 'test \"\$(locale 2>&1 | grep -c Cannot)\" = 0 && test \${#\${:-привет}} = 6'"
+done
 check su - "$name" -c "zsh -ic 'alias ll k cat && whence -w _kubectl && test -n \"\$STARSHIP_SHELL\"'"
 as_user "bash -ic 'alias ll k && complete -p k && test -n \"\$STARSHIP_SHELL\"'"
 
