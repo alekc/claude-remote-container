@@ -13,7 +13,7 @@ WORKDIR /w
 
 FROM dl AS helm
 # renovate: datasource=github-releases depName=helm/helm
-ARG HELM_VERSION=4.3.0
+ARG HELM_VERSION=4.3.1
 RUN . /usr/local/lib/fetch.sh; f=helm-v${HELM_VERSION}-linux-amd64.tar.gz; \
   fetch https://get.helm.sh/$f $f; fetch https://get.helm.sh/$f.sha256sum sums; \
   verify "$(sum_of sums $f)" $f; tar -xzf $f; install -D -m 0755 linux-amd64/helm /out/helm
@@ -56,14 +56,14 @@ RUN . /usr/local/lib/fetch.sh; u=https://github.com/helmfile/vals/releases/downl
 
 FROM dl AS helmfile
 # renovate: datasource=github-releases depName=helmfile/helmfile
-ARG HELMFILE_VERSION=1.8.1
+ARG HELMFILE_VERSION=1.8.2
 RUN . /usr/local/lib/fetch.sh; u=https://github.com/helmfile/helmfile/releases/download/v${HELMFILE_VERSION}; \
   f=helmfile_${HELMFILE_VERSION}_linux_amd64.tar.gz; fetch $u/$f $f; fetch $u/helmfile_${HELMFILE_VERSION}_checksums.txt sums; \
   verify "$(sum_of sums $f)" $f; tar -xzf $f; install -D -m 0755 helmfile /out/helmfile
 
 FROM dl AS trivy
 # renovate: datasource=github-releases depName=aquasecurity/trivy
-ARG TRIVY_VERSION=0.75.0
+ARG TRIVY_VERSION=0.76.0
 RUN . /usr/local/lib/fetch.sh; u=https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}; \
   f=trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz; fetch $u/$f $f; fetch $u/trivy_${TRIVY_VERSION}_checksums.txt sums; \
   verify "$(sum_of sums $f)" $f; tar -xzf $f; install -D -m 0755 trivy /out/trivy
@@ -77,14 +77,14 @@ RUN . /usr/local/lib/fetch.sh; u=https://github.com/rclone/rclone/releases/downl
 
 FROM dl AS uv
 # renovate: datasource=github-releases depName=astral-sh/uv
-ARG UV_VERSION=0.13.0
+ARG UV_VERSION=0.13.1
 RUN . /usr/local/lib/fetch.sh; u=https://github.com/astral-sh/uv/releases/download/${UV_VERSION}; \
   d=uv-x86_64-unknown-linux-gnu; f=$d.tar.gz; fetch $u/$f $f; fetch $u/$f.sha256 sums; \
   verify "$(sum_of sums $f)" $f; tar -xzf $f; install -D -m 0755 -t /out $d/uv $d/uvx
 
 FROM dl AS herdr
 # renovate: datasource=github-releases depName=herdrdev/herdr
-ARG HERDR_VERSION=0.9.4
+ARG HERDR_VERSION=0.9.5
 # No checksums file upstream: verify against the asset digest GitHub's
 # release API reports. The optional token only lifts the API rate limit.
 RUN --mount=type=secret,id=github_token,required=false . /usr/local/lib/fetch.sh; \
@@ -111,7 +111,7 @@ RUN . /usr/local/lib/fetch.sh; u=https://gitlab.com/gitlab-org/cli/-/releases/v$
 
 FROM dl AS infisical
 # renovate: datasource=github-releases depName=Infisical/cli
-ARG INFISICAL_VERSION=0.43.144
+ARG INFISICAL_VERSION=0.44.2
 RUN . /usr/local/lib/fetch.sh; u=https://github.com/Infisical/cli/releases/download/v${INFISICAL_VERSION}; \
   f=cli_${INFISICAL_VERSION}_linux_amd64.tar.gz; fetch $u/$f $f; fetch $u/checksums.txt sums; \
   verify "$(sum_of sums $f)" $f; tar -xzf $f; install -D -m 0755 infisical /out/infisical
@@ -150,7 +150,7 @@ RUN . /usr/local/lib/fetch.sh; u=https://github.com/starship/starship/releases/d
 
 FROM dl AS mise
 # renovate: datasource=github-releases depName=jdx/mise
-ARG MISE_VERSION=2026.10.9
+ARG MISE_VERSION=2026.10.15
 RUN . /usr/local/lib/fetch.sh; u=https://github.com/jdx/mise/releases/download/v${MISE_VERSION}; \
   f=mise-v${MISE_VERSION}-linux-x64; fetch $u/$f $f; fetch $u/SHASUMS256.txt sums; \
   verify "$(sum_of sums $f)" $f; install -D -m 0755 $f /out/mise
@@ -250,11 +250,11 @@ RUN uv tool install --no-cache --python /usr/bin/python3 ansible-core==${ANSIBLE
 # project's .go-version, .nvmrc, .python-version or mise.toml picks another,
 # installed on first use into the home volume. mise verifies each download.
 # renovate: datasource=golang-version depName=go
-ARG GO_VERSION=1.27.2
+ARG GO_VERSION=1.27.3
 # renovate: datasource=node-version depName=node
-ARG NODE_VERSION=26.11.1
+ARG NODE_VERSION=26.12.0
 # renovate: datasource=python-version depName=python
-ARG PYTHON_VERSION=3.14.8
+ARG PYTHON_VERSION=3.15.0
 RUN install -d /etc/mise \
   && printf '%s\n' '[tools]' "go = \"${GO_VERSION}\"" "node = \"${NODE_VERSION}\"" \
     "python = \"${PYTHON_VERSION}\"" '[settings]' \
@@ -281,7 +281,7 @@ RUN npm install --global --prefix /opt/ccstatusline --cache /tmp/npm-cache \
 RUN install -d -o 1000 -g 1000 /home/linuxbrew
 USER 1000:1000
 # renovate: datasource=git-refs depName=https://github.com/Homebrew/install branch=main
-ARG HOMEBREW_INSTALL_REF=7a3f48c7e498d7df3237fd41c30f4d492857edf4
+ARG HOMEBREW_INSTALL_REF=a2fe82ef3a9ec7a5c72a559c09676256d6f354f6
 RUN curl -fsSL --proto '=https' -o /tmp/brew-install.sh \
     "https://raw.githubusercontent.com/Homebrew/install/${HOMEBREW_INSTALL_REF}/install.sh" \
   && HOME=/tmp/brew-home NONINTERACTIVE=1 HOMEBREW_NO_ANALYTICS=1 bash /tmp/brew-install.sh \
