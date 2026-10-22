@@ -85,6 +85,7 @@ jobs:
           sudo chmod 0400 "$d/hk/ssh_host_ed25519_key"
           # A fresh volume below the home mounts root-owned, like a new PVC.
           docker run -d --name sshd -p 2222:2222 -e USER=ci "${mounts[@]}" \
+            -e KUBERNETES_SERVICE_HOST=10.96.0.1 -e KUBERNETES_SERVICE_PORT=443 \
             -v ci-project:/home/ci/dev/project claude-remote:ci
           trap 'docker logs sshd; docker rm -f sshd >/dev/null' EXIT
           for _ in $(seq 30); do
@@ -96,6 +97,7 @@ jobs:
             'test "$(id -un)" = ci && test -s ~/.config/ccstatusline/settings.json &&
             helm plugin list | grep -q ^diff && command -v node | grep -q /mise/shims/ &&
             test "$XDG_CACHE_HOME" = /var/cache/claude-remote && brew --version &&
+            test "$KUBERNETES_SERVICE_HOST:$KUBERNETES_SERVICE_PORT" = 10.96.0.1:443 &&
             touch ~/dev/project/written'
 
       # Fork PRs get a read-only token, so only same-repo refs publish, and a

@@ -99,6 +99,15 @@ as_user "echo '{\"lines\":[[]]}' > ~/.config/ccstatusline/settings.json && $seed
 as_user "rm ~/.config/ccstatusline/settings.json && $seed && echo '{\"model\":{\"display_name\":\"smoke\"}}' | ccstatusline | grep -q smoke"
 as_user "test -s ~/.zshrc && echo '# keep' > ~/.zshrc && $seed && grep -qx '# keep' ~/.zshrc"
 
+# Kubeconfig: only with a mounted service account, and never over an edit.
+as_user 'test ! -e ~/.kube/config'
+sa=/var/run/secrets/kubernetes.io/serviceaccount
+install -d "$sa" && echo tok > "$sa/token" && echo ns1 > "$sa/namespace" && : > "$sa/ca.crt"
+as_user "$seed && test \"\$(kubectl config view -o jsonpath='{.contexts[0].context.namespace}')\" = ns1"
+as_user "test \"\$(stat -c %a ~/.kube/config)\" = 600"
+as_user "kubectl config set-context extra >/dev/null && $seed && kubectl config get-contexts extra"
+rm -rf /var/run/secrets
+
 # zsh is the login shell: same PATH for `ssh host cmd`, defaults interactively.
 check zsh --version
 check starship --version

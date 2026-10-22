@@ -26,6 +26,15 @@ install -o root -g root -m 0400 "$hostkey" /etc/ssh/ssh_host_ed25519_key
 install -d -o root -g root -m 0755 /etc/ssh/authorized_keys
 install -o root -g root -m 0644 "$keys" "/etc/ssh/authorized_keys/$USER"
 
+# sshd starts logins without the pod's env; pam_env reads /etc/environment,
+# so in-cluster clients still find the API server from an SSH session. A file
+# that already sets them (a restart, or a read-only mount) is left alone.
+if [ -n "${KUBERNETES_SERVICE_HOST:-}" ] &&
+  ! grep -q '^KUBERNETES_SERVICE_HOST=' /etc/environment; then
+  printf 'KUBERNETES_SERVICE_HOST=%s\nKUBERNETES_SERVICE_PORT=%s\n' \
+    "$KUBERNETES_SERVICE_HOST" "${KUBERNETES_SERVICE_PORT:-443}" >> /etc/environment
+fi
+
 # Defaults are a convenience: a failure is reported, never blocks login.
 env -i HOME="/home/$USER" PATH=/usr/local/bin:/usr/bin:/bin \
   setpriv --reuid=1000 --regid=1000 --init-groups /usr/local/libexec/claude-remote/seed-home \
