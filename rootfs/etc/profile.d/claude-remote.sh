@@ -1,6 +1,11 @@
 # Every shell on the host: ssh logins read it via /etc/profile, herdr panes
 # and `ssh host cmd` via the top of /etc/bash.bashrc. Must print nothing.
 export HOMEBREW_NO_ANALYTICS=1 HELM_PLUGINS=/opt/helm/plugins CHECKPOINT_DISABLE=1
+# A client locale missing here (macOS sends LC_CTYPE=UTF-8) or none at all
+# leaves libc in ASCII, and zsh then mangles non-Latin input.
+if [ -n "$(locale 2>&1 >/dev/null)" ] || [ "$(locale charmap)" != UTF-8 ]; then
+  export LC_ALL=C.UTF-8
+fi
 export NPM_CONFIG_PREFIX="$HOME/.local" GOBIN="$HOME/.local/bin"
 # Caches live off the home volume, so a restart empties them. Go's module
 # cache and npm's do not follow XDG_CACHE_HOME and are pointed there too.

@@ -198,6 +198,9 @@ RUN apt-get update \
   && rm -rf /var/lib/apt/lists/* /etc/ssh/ssh_host_* \
   && ln -s /usr/bin/batcat /usr/local/bin/bat
 
+# sshd takes the client's LANG and LC_*; profile.d covers any locale not built.
+RUN locale-gen en_GB.UTF-8 en_US.UTF-8
+
 # The base image's uid 1000 becomes a neutral agent account without sudo or
 # adm; the entrypoint renames it to $USER on every start.
 RUN usermod -l agent -d /home/agent -c agent -s /usr/bin/zsh ubuntu \
