@@ -63,10 +63,16 @@
       "automerge": false
     },
     {
-      "description": "A newer binary rewrites state irreversibly: own PR, always reviewed",
+      "description": "Own PR for the state-writing binaries; minors and patches merge themselves once CI passes, majors stay reviewed",
       "matchPackageNames": ["opentofu/opentofu", "hashicorp/terraform"],
       "groupName": "tofu and terraform",
       "automerge": false
+    },
+    {
+      "description": "Owner decision 2026-10-25: tofu and terraform minors are safe to automerge",
+      "matchPackageNames": ["opentofu/opentofu", "hashicorp/terraform"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "automerge": true
     },
     {
       "description": "kubectl tracks the cluster's minor",
