@@ -119,7 +119,7 @@ RUN . /usr/local/lib/fetch.sh; u=https://github.com/Infisical/cli/releases/downl
 FROM dl AS tofu
 # Matches the laptop: a newer binary rewrites state irreversibly. No automerge.
 # renovate: datasource=github-releases depName=opentofu/opentofu
-ARG TOFU_VERSION=1.13.1
+ARG TOFU_VERSION=1.13.2
 RUN . /usr/local/lib/fetch.sh; u=https://github.com/opentofu/opentofu/releases/download/v${TOFU_VERSION}; \
   f=tofu_${TOFU_VERSION}_linux_amd64.tar.gz; fetch $u/$f $f; fetch $u/tofu_${TOFU_VERSION}_SHA256SUMS sums; \
   verify "$(sum_of sums $f)" $f; tar -xzf $f tofu; install -D -m 0755 tofu /out/tofu
@@ -127,7 +127,7 @@ RUN . /usr/local/lib/fetch.sh; u=https://github.com/opentofu/opentofu/releases/d
 FROM dl AS terraform
 # Same state-version hazard as tofu. No automerge.
 # renovate: datasource=github-releases depName=hashicorp/terraform
-ARG TERRAFORM_VERSION=1.16.6
+ARG TERRAFORM_VERSION=1.17.0
 RUN . /usr/local/lib/fetch.sh; u=https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}; \
   f=terraform_${TERRAFORM_VERSION}_linux_amd64.zip; fetch $u/$f $f; fetch $u/terraform_${TERRAFORM_VERSION}_SHA256SUMS sums; \
   verify "$(sum_of sums $f)" $f; unzip -q $f terraform; install -D -m 0755 terraform /out/terraform
