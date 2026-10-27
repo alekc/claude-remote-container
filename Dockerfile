@@ -4,7 +4,7 @@
 
 # Downloads run natively: every asset is named amd64 explicitly, and tar needs
 # openat2, which Rosetta's amd64 emulation lacks on an arm64 builder.
-FROM --platform=$BUILDPLATFORM ubuntu:26.04@sha256:f144425ff09be612d6d9ad965196e9cdc23dae1f42110a8a11a3e9a8198759f7 AS dl
+FROM --platform=$BUILDPLATFORM ubuntu:26.04@sha256:c098726dd9b9733f3e885f8de0ef375206a311b0a317eadc40d347b1115fb944 AS dl
 RUN apt-get update \
   && apt-get install -y --no-install-recommends ca-certificates curl jq unzip xz-utils \
   && rm -rf /var/lib/apt/lists/*
@@ -192,7 +192,7 @@ RUN . /usr/local/lib/fetch.sh; u=https://github.com/losisin/helm-values-schema-j
   f=helm-values-schema-json_${HELM_SCHEMA_VERSION}_linux_amd64.tgz; fetch $u/$f $f; fetch $u/helm-values-schema-json-checksum.sha sums; \
   verify "$(sum_of sums $f)" $f; mkdir -p /out/schema; untar_root $f /out/schema
 
-FROM ubuntu:26.04@sha256:f144425ff09be612d6d9ad965196e9cdc23dae1f42110a8a11a3e9a8198759f7
+FROM ubuntu:26.04@sha256:c098726dd9b9733f3e885f8de0ef375206a311b0a317eadc40d347b1115fb944
 ARG DEBIAN_FRONTEND=noninteractive
 # The host keys openssh-server's postinst generates would ship in a public
 # image; the entrypoint installs the real one from a mount.
