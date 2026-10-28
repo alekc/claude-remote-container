@@ -262,7 +262,7 @@ ARG GO_VERSION=1.27.3
 # renovate: datasource=node-version depName=node
 ARG NODE_VERSION=26.12.1
 # renovate: datasource=python-version depName=python
-ARG PYTHON_VERSION=3.15.1
+ARG PYTHON_VERSION=3.15.2
 RUN install -d /etc/mise \
   && printf '%s\n' '[tools]' "go = \"${GO_VERSION}\"" "node = \"${NODE_VERSION}\"" \
     "python = \"${PYTHON_VERSION}\"" '[settings]' \
