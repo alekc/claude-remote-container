@@ -29,6 +29,7 @@ check trivy --version
 check rclone version
 check uv --version
 check herdr --version
+check opencode --version
 check gh --version
 check glab --version
 check infisical --version

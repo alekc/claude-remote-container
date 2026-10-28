@@ -16,14 +16,16 @@ to run as a single Kubernetes pod with a persistent home volume.
 - Language runtimes through [mise](https://mise.jdx.dev): `go`, `node`, `python`.
 - General tooling: `gh`, `glab`, `infisical`, `rclone`, `trivy`, `yq`, `uv`,
   `pre-commit`, `herdr`, Homebrew.
+- [OpenCode](https://opencode.ai) (`opencode`, V2 line) beside Claude Code, with
+  its self-update off: the image pins the version.
 - [ccstatusline](https://github.com/sirmalloc/ccstatusline) as the Claude Code
   status line, seeded with a default layout.
 - zsh as the agent's login shell, with [starship](https://starship.rs) and
   `bat`; see [Shell](#shell).
 
 Every downloaded binary is checked against the publisher's SHA-256 before it is
-installed. herdr publishes no checksums file, so its hash comes from the GitHub
-release API's asset digest. mise verifies the runtimes itself: go against its
+installed. herdr and opencode publish no checksums file, so their hashes come
+from the GitHub release API's asset digest. mise verifies the runtimes itself: go against its
 `.sha256`, node against GPG-signed `SHASUMS256`, python by GitHub attestation.
 
 ## Shell
