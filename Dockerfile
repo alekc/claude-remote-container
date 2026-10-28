@@ -157,7 +157,7 @@ RUN . /usr/local/lib/fetch.sh; u=https://github.com/starship/starship/releases/d
 
 FROM dl AS mise
 # renovate: datasource=github-releases depName=jdx/mise
-ARG MISE_VERSION=2026.10.18
+ARG MISE_VERSION=2026.10.19
 RUN . /usr/local/lib/fetch.sh; u=https://github.com/jdx/mise/releases/download/v${MISE_VERSION}; \
   f=mise-v${MISE_VERSION}-linux-x64; fetch $u/$f $f; fetch $u/SHASUMS256.txt sums; \
   verify "$(sum_of sums $f)" $f; install -D -m 0755 $f /out/mise
