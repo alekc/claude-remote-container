@@ -24,8 +24,8 @@ to run as a single Kubernetes pod with a persistent home volume.
   `bat`; see [Shell](#shell).
 
 Every downloaded binary is checked against the publisher's SHA-256 before it is
-installed. herdr and opencode publish no checksums file, so their hashes come
-from the GitHub release API's asset digest. mise verifies the runtimes itself: go against its
+installed. herdr publishes no checksums file, so its hash comes from the GitHub
+release API's asset digest. mise verifies the runtimes itself: go against its
 `.sha256`, node against GPG-signed `SHASUMS256`, python by GitHub attestation.
 
 ## Shell
@@ -177,5 +177,5 @@ release timestamp to age, so its bumps skip that wait.
 
 - Guard the agent from acting on production by default (preflight checks, managed
   Claude Code settings).
-- A herdr binary left in `~/.local/bin` on the home volume shadows the image's
-  copy; decide whether the image or the user owns it.
+- A herdr or opencode binary left in `~/.local/bin` on the home volume shadows
+  the image's copy; decide whether the image or the user owns it.
