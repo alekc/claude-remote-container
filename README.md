@@ -16,6 +16,8 @@ to run as a single Kubernetes pod with a persistent home volume.
 - Language runtimes through [mise](https://mise.jdx.dev): `go`, `node`, `python`.
 - General tooling: `gh`, `glab`, `infisical`, `rclone`, `trivy`, `yq`, `uv`,
   `pre-commit`, `herdr`, Homebrew.
+- [OpenCode](https://opencode.ai) (`opencode`, V2 line) beside Claude Code, with
+  its self-update off: the image pins the version.
 - [ccstatusline](https://github.com/sirmalloc/ccstatusline) as the Claude Code
   status line, seeded with a default layout.
 - zsh as the agent's login shell, with [starship](https://starship.rs) and
@@ -175,5 +177,5 @@ release timestamp to age, so its bumps skip that wait.
 
 - Guard the agent from acting on production by default (preflight checks, managed
   Claude Code settings).
-- A herdr binary left in `~/.local/bin` on the home volume shadows the image's
-  copy; decide whether the image or the user owns it.
+- A herdr or opencode binary left in `~/.local/bin` on the home volume shadows
+  the image's copy; decide whether the image or the user owns it.

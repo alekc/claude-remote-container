@@ -95,6 +95,13 @@ RUN --mount=type=secret,id=github_token,required=false . /usr/local/lib/fetch.sh
   fetch https://github.com/herdrdev/herdr/releases/download/v${HERDR_VERSION}/$f $f; \
   verify "$sum" $f; install -D -m 0755 $f /out/herdr
 
+FROM dl AS opencode
+# renovate: datasource=github-releases depName=anomalyco/opencode
+ARG OPENCODE_VERSION=2.2.0
+RUN . /usr/local/lib/fetch.sh; u=https://github.com/anomalyco/opencode/releases/download/v${OPENCODE_VERSION}; \
+  f=opencode-linux-x64.tar.gz; fetch $u/$f $f; fetch $u/SHA256SUMS sums; \
+  verify "$(sum_of sums $f)" $f; tar -xzf $f opencode; install -D -m 0755 opencode /out/opencode
+
 FROM dl AS gh
 # renovate: datasource=github-releases depName=cli/cli
 ARG GH_VERSION=2.103.2
@@ -226,6 +233,7 @@ COPY --from=trivy /out/ /usr/local/bin/
 COPY --from=rclone /out/ /usr/local/bin/
 COPY --from=uv /out/ /usr/local/bin/
 COPY --from=herdr /out/ /usr/local/bin/
+COPY --from=opencode /out/ /usr/local/bin/
 COPY --from=gh /out/ /usr/local/bin/
 COPY --from=glab /out/ /usr/local/bin/
 COPY --from=infisical /out/ /usr/local/bin/
