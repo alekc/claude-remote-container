@@ -24,10 +24,42 @@ jobs:
     permissions:
       contents: read
       packages: write
+    outputs:
+      version: ${{ steps.version.outputs.tag }}
+      previous: ${{ steps.version.outputs.previous }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+          # Tags and history, to work out the next version on main.
+          fetch-depth: 0
+
+      # Every push to main is a release. Conventional Commits since the last
+      # vX.Y.Z pick the bump: breaking is major (minor while 0.x), feat is
+      # minor, anything else is a patch.
+      - id: version
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          set -euo pipefail
+          last=$(git tag --list 'v*' --sort=-v:refname | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | head -1 || true)
+          if [ -z "$last" ]; then
+            echo "tag=v0.1.0" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          if [ -n "$(git tag --points-at HEAD)" ]; then
+            echo "HEAD is already tagged: $(git tag --points-at HEAD)"; exit 0
+          fi
+          log=$(git log --format='%s%n%b' "$last..HEAD")
+          IFS=. read -r major minor patch <<<"${last#v}"
+          if grep -qE '^[a-z]+(\([^)]*\))?!:|^BREAKING CHANGE' <<<"$log"; then
+            if [ "$major" = 0 ]; then minor=$((minor + 1)); else major=$((major + 1)); minor=0; fi
+            patch=0
+          elif grep -qE '^feat(\([^)]*\))?:' <<<"$log"; then
+            minor=$((minor + 1)); patch=0
+          else
+            patch=$((patch + 1))
+          fi
+          echo "previous=$last" >> "$GITHUB_OUTPUT"
+          echo "tag=v${major}.${minor}.${patch}" >> "$GITHUB_OUTPUT"
 
       - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
 
@@ -39,6 +71,7 @@ jobs:
             type=ref,event=pr
             type=sha,format=short,enable={{is_default_branch}}
             type=raw,value=latest,enable={{is_default_branch}}
+            type=raw,value=${{ steps.version.outputs.tag }},enable=${{ steps.version.outputs.tag != '' }}
 
       # Built once into the local daemon, with the publish tags too: the image
       # the tests pass is the one pushed, never a rebuild.
@@ -128,6 +161,26 @@ jobs:
               "$(docker image inspect --format '{{.Id}}' claude-remote:ci)"
             docker push "$tag"
           done <<<"$TAGS"
+
+  # Tag the commit and publish release notes only after the image is pushed,
+  # so a release never names an image that does not exist.
+  release:
+    needs: build
+    if: needs.build.outputs.version != ''
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - name: Tag and release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ needs.build.outputs.version }}
+          PREV: ${{ needs.build.outputs.previous }}
+        run: |
+          set -euo pipefail
+          notes="Image: \`${IMAGE}:${TAG}\` (also \`sha-${GITHUB_SHA::7}\`)"
+          gh release create "$TAG" --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" \
+            --title "$TAG" --notes "$notes" --generate-notes ${PREV:+--notes-start-tag "$PREV"}
 
   cleanup:
     if: >-
