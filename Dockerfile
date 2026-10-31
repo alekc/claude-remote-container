@@ -77,7 +77,7 @@ RUN . /usr/local/lib/fetch.sh; u=https://github.com/rclone/rclone/releases/downl
 
 FROM dl AS uv
 # renovate: datasource=github-releases depName=astral-sh/uv
-ARG UV_VERSION=0.13.5
+ARG UV_VERSION=0.13.6
 RUN . /usr/local/lib/fetch.sh; u=https://github.com/astral-sh/uv/releases/download/${UV_VERSION}; \
   d=uv-x86_64-unknown-linux-gnu; f=$d.tar.gz; fetch $u/$f $f; fetch $u/$f.sha256 sums; \
   verify "$(sum_of sums $f)" $f; tar -xzf $f; install -D -m 0755 -t /out $d/uv $d/uvx
@@ -104,21 +104,21 @@ RUN . /usr/local/lib/fetch.sh; u=https://github.com/anomalyco/opencode/releases/
 
 FROM dl AS gh
 # renovate: datasource=github-releases depName=cli/cli
-ARG GH_VERSION=2.103.2
+ARG GH_VERSION=2.103.3
 RUN . /usr/local/lib/fetch.sh; u=https://github.com/cli/cli/releases/download/v${GH_VERSION}; \
   d=gh_${GH_VERSION}_linux_amd64; f=$d.tar.gz; fetch $u/$f $f; fetch $u/gh_${GH_VERSION}_checksums.txt sums; \
   verify "$(sum_of sums $f)" $f; tar -xzf $f; install -D -m 0755 $d/bin/gh /out/gh
 
 FROM dl AS glab
 # renovate: datasource=gitlab-releases depName=gitlab-org/cli
-ARG GLAB_VERSION=1.124.0
+ARG GLAB_VERSION=1.125.0
 RUN . /usr/local/lib/fetch.sh; u=https://gitlab.com/gitlab-org/cli/-/releases/v${GLAB_VERSION}/downloads; \
   f=glab_${GLAB_VERSION}_linux_amd64.tar.gz; fetch $u/$f $f; fetch $u/checksums.txt sums; \
   verify "$(sum_of sums $f)" $f; tar -xzf $f; install -D -m 0755 bin/glab /out/glab
 
 FROM dl AS infisical
 # renovate: datasource=github-releases depName=Infisical/cli
-ARG INFISICAL_VERSION=0.44.9
+ARG INFISICAL_VERSION=0.44.10
 RUN . /usr/local/lib/fetch.sh; u=https://github.com/Infisical/cli/releases/download/v${INFISICAL_VERSION}; \
   f=cli_${INFISICAL_VERSION}_linux_amd64.tar.gz; fetch $u/$f $f; fetch $u/checksums.txt sums; \
   verify "$(sum_of sums $f)" $f; tar -xzf $f; install -D -m 0755 infisical /out/infisical
@@ -142,7 +142,7 @@ RUN . /usr/local/lib/fetch.sh; u=https://releases.hashicorp.com/terraform/${TERR
 FROM dl AS kubectl
 # Tracks the cluster's minor; renovate.json holds it there.
 # renovate: datasource=github-releases depName=kubernetes/kubernetes
-ARG KUBECTL_VERSION=1.36.5
+ARG KUBECTL_VERSION=1.36.6
 RUN . /usr/local/lib/fetch.sh; u=https://dl.k8s.io/release/v${KUBECTL_VERSION}/bin/linux/amd64; \
   fetch $u/kubectl kubectl; fetch $u/kubectl.sha256 sums; \
   verify "$(cat sums)" kubectl; install -D -m 0755 kubectl /out/kubectl
@@ -164,7 +164,7 @@ RUN . /usr/local/lib/fetch.sh; u=https://github.com/starship/starship/releases/d
 
 FROM dl AS mise
 # renovate: datasource=github-releases depName=jdx/mise
-ARG MISE_VERSION=2026.10.19
+ARG MISE_VERSION=2026.10.21
 RUN . /usr/local/lib/fetch.sh; u=https://github.com/jdx/mise/releases/download/v${MISE_VERSION}; \
   f=mise-v${MISE_VERSION}-linux-x64; fetch $u/$f $f; fetch $u/SHASUMS256.txt sums; \
   verify "$(sum_of sums $f)" $f; install -D -m 0755 $f /out/mise
@@ -268,7 +268,7 @@ RUN uv tool install --no-cache --python /usr/bin/python3 ansible-core==${ANSIBLE
 # renovate: datasource=golang-version depName=go
 ARG GO_VERSION=1.27.3
 # renovate: datasource=node-version depName=node
-ARG NODE_VERSION=26.12.1
+ARG NODE_VERSION=26.13.0
 # renovate: datasource=python-version depName=python
 ARG PYTHON_VERSION=3.15.2
 RUN install -d /etc/mise \
@@ -297,7 +297,7 @@ RUN npm install --global --prefix /opt/ccstatusline --cache /tmp/npm-cache \
 RUN install -d -o 1000 -g 1000 /home/linuxbrew
 USER 1000:1000
 # renovate: datasource=git-refs depName=https://github.com/Homebrew/install branch=main
-ARG HOMEBREW_INSTALL_REF=85d1a3fc80d8a63932f632aca8f787de11d14a64
+ARG HOMEBREW_INSTALL_REF=8c82c081753d4263da0cfe615ef8d9433425f22b
 RUN curl -fsSL --proto '=https' -o /tmp/brew-install.sh \
     "https://raw.githubusercontent.com/Homebrew/install/${HOMEBREW_INSTALL_REF}/install.sh" \
   && HOME=/tmp/brew-home NONINTERACTIVE=1 HOMEBREW_NO_ANALYTICS=1 bash /tmp/brew-install.sh \
