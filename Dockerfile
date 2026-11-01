@@ -134,7 +134,7 @@ RUN . /usr/local/lib/fetch.sh; u=https://github.com/opentofu/opentofu/releases/d
 FROM dl AS terraform
 # Same state-version hazard as tofu. No automerge.
 # renovate: datasource=github-releases depName=hashicorp/terraform
-ARG TERRAFORM_VERSION=1.17.0
+ARG TERRAFORM_VERSION=1.17.1
 RUN . /usr/local/lib/fetch.sh; u=https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}; \
   f=terraform_${TERRAFORM_VERSION}_linux_amd64.zip; fetch $u/$f $f; fetch $u/terraform_${TERRAFORM_VERSION}_SHA256SUMS sums; \
   verify "$(sum_of sums $f)" $f; unzip -q $f terraform; install -D -m 0755 terraform /out/terraform
