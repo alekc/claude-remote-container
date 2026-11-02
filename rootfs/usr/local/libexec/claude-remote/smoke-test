@@ -29,6 +29,7 @@ check trivy --version
 check rclone version
 check uv --version
 check herdr --version
+check hc --version
 check opencode --version
 check gh --version
 check glab --version
@@ -84,6 +85,8 @@ as_user 'test -z "$(. /etc/profile.d/claude-remote.sh 2>&1)"'
 check sh -c "head -n1 /etc/bash.bashrc | grep -qx '. /etc/profile.d/claude-remote.sh'"
 as_user 'brew --version'
 as_user 'herdr --version && helm plugin list | grep -q ^diff'
+# hc follows a herdr-core that `hc machine update` puts in ~/.local/bin.
+as_user 'o=$HOME/.local/bin/herdr-core; mkdir -p "${o%/*}" && printf "#!/bin/sh\necho own\n" > "$o" && chmod +x "$o" && test "$(hc)" = own; r=$?; rm -f "$o"; exit $r'
 # The user reaches the runtimes through the system shims, at the defaults.
 as_user 'test "$(command -v node)" = /usr/local/share/mise/shims/node'
 as_user 'mise ls --current --offline | grep -c "(system)" | grep -qx 3'

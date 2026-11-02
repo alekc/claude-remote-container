@@ -1,5 +1,6 @@
 # syntax=docker/dockerfile:1
-# Agent host for remote Claude Code sessions driven through `herdr --remote`.
+# Agent host for remote Claude Code sessions driven through `herdr --remote`
+# or the Herdr desktop app (`hc machine add`).
 # One download stage per tool, so a version bump rebuilds only its own layer.
 
 # Downloads run natively: every asset is named amd64 explicitly, and tar needs
@@ -94,6 +95,19 @@ RUN --mount=type=secret,id=github_token,required=false . /usr/local/lib/fetch.sh
   sum=$(jq -r --arg n $f '.assets[] | select(.name == $n) | .digest | ltrimstr("sha256:")' rel.json); \
   fetch https://github.com/herdrdev/herdr/releases/download/v${HERDR_VERSION}/$f $f; \
   verify "$sum" $f; install -D -m 0755 $f /out/herdr
+
+FROM dl AS herdr-core
+# Tags live on GitHub, builds on releases.herdr.dev: the hash comes from the
+# per-version manifest there, as the upstream installer does. hc runs whatever
+# herdr-core PATH finds, as the laptop's connect does, so a newer copy that
+# `hc machine update` drops in ~/.local/bin cannot split hc from the server.
+# renovate: datasource=github-tags depName=herdrdev/herdr-core
+ARG HERDR_CORE_VERSION=0.1.17
+RUN . /usr/local/lib/fetch.sh; u=https://releases.herdr.dev/core/${HERDR_CORE_VERSION}; \
+  f=herdr-core-linux-x86_64.tar.gz; fetch $u/manifest.json m.json; fetch $u/$f $f; \
+  verify "$(jq -r '.targets."linux-x86_64".sha256 // empty' m.json)" $f; tar -xzf $f herdr-core; \
+  install -D -m 0755 herdr-core /out/herdr-core; \
+  printf '#!/bin/sh\nexec herdr-core "$@"\n' > /out/hc; chmod 0755 /out/hc
 
 FROM dl AS opencode
 # renovate: datasource=github-releases depName=anomalyco/opencode
@@ -233,6 +247,7 @@ COPY --from=trivy /out/ /usr/local/bin/
 COPY --from=rclone /out/ /usr/local/bin/
 COPY --from=uv /out/ /usr/local/bin/
 COPY --from=herdr /out/ /usr/local/bin/
+COPY --from=herdr-core /out/ /usr/local/bin/
 COPY --from=opencode /out/ /usr/local/bin/
 COPY --from=gh /out/ /usr/local/bin/
 COPY --from=glab /out/ /usr/local/bin/
