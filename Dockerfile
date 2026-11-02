@@ -98,13 +98,16 @@ RUN --mount=type=secret,id=github_token,required=false . /usr/local/lib/fetch.sh
 
 FROM dl AS herdr-core
 # Tags live on GitHub, builds on releases.herdr.dev: the hash comes from the
-# per-version manifest there, as the upstream installer does.
+# per-version manifest there, as the upstream installer does. hc runs whatever
+# herdr-core PATH finds, as the laptop's connect does, so a newer copy that
+# `hc machine update` drops in ~/.local/bin cannot split hc from the server.
 # renovate: datasource=github-tags depName=herdrdev/herdr-core
 ARG HERDR_CORE_VERSION=0.1.17
 RUN . /usr/local/lib/fetch.sh; u=https://releases.herdr.dev/core/${HERDR_CORE_VERSION}; \
   f=herdr-core-linux-x86_64.tar.gz; fetch $u/manifest.json m.json; fetch $u/$f $f; \
   verify "$(jq -r '.targets."linux-x86_64".sha256 // empty' m.json)" $f; tar -xzf $f herdr-core; \
-  install -D -m 0755 herdr-core /out/herdr-core; ln -s herdr-core /out/hc
+  install -D -m 0755 herdr-core /out/herdr-core; \
+  printf '#!/bin/sh\nexec herdr-core "$@"\n' > /out/hc; chmod 0755 /out/hc
 
 FROM dl AS opencode
 # renovate: datasource=github-releases depName=anomalyco/opencode
