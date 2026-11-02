@@ -1,0 +1,5 @@
+# Automatic reviews are off; "@coderabbitai review" on a PR still asks for one.
+reviews:
+  auto_review:
+    enabled: false
+    auto_incremental_review: false
