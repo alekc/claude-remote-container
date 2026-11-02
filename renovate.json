@@ -28,7 +28,7 @@
   "packageRules": [
     {
       "description": "Release tags carry a v prefix the ARGs do not",
-      "matchDatasources": ["github-releases", "gitlab-releases"],
+      "matchDatasources": ["github-releases", "github-tags", "gitlab-releases"],
       "extractVersion": "^v?(?<version>.*)$"
     },
     {

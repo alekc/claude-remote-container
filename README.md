@@ -1,8 +1,10 @@
 # claude-remote-container
 
 Container image for a long-lived Claude Code agent host, driven over SSH with
-[herdr](https://github.com/herdrdev/herdr) (`herdr --remote <host>`). It is meant
-to run as a single Kubernetes pod with a persistent home volume.
+[herdr](https://github.com/herdrdev/herdr) (`herdr --remote <host>`) or the Herdr
+desktop app, whose terminals run in `herdr-core` (`hc machine add <host>` on the
+laptop). The two are separate runtimes and do not share tabs. It is meant to run
+as a single Kubernetes pod with a persistent home volume.
 
 ## What is in it
 
@@ -15,7 +17,7 @@ to run as a single Kubernetes pod with a persistent home volume.
   `terraform`, `ansible-core`, `ansible-lint`.
 - Language runtimes through [mise](https://mise.jdx.dev): `go`, `node`, `python`.
 - General tooling: `gh`, `glab`, `infisical`, `rclone`, `trivy`, `yq`, `uv`,
-  `pre-commit`, `herdr`, Homebrew.
+  `pre-commit`, `herdr`, `herdr-core` (`hc`), Homebrew.
 - [OpenCode](https://opencode.ai) (`opencode`, V2 line) beside Claude Code, with
   its self-update off: the image pins the version.
 - [ccstatusline](https://github.com/sirmalloc/ccstatusline) as the Claude Code
@@ -25,7 +27,9 @@ to run as a single Kubernetes pod with a persistent home volume.
 
 Every downloaded binary is checked against the publisher's SHA-256 before it is
 installed. herdr publishes no checksums file, so its hash comes from the GitHub
-release API's asset digest. mise verifies the runtimes itself: go against its
+release API's asset digest; herdr-core's builds are not on GitHub, so its hash
+comes from the per-version `manifest.json` on releases.herdr.dev, which is what
+its own installer checks. mise verifies the runtimes itself: go against its
 `.sha256`, node against GPG-signed `SHASUMS256`, python by GitHub attestation.
 
 ## Shell
@@ -177,5 +181,7 @@ release timestamp to age, so its bumps skip that wait.
 
 - Guard the agent from acting on production by default (preflight checks, managed
   Claude Code settings).
-- A herdr or opencode binary left in `~/.local/bin` on the home volume shadows
-  the image's copy; decide whether the image or the user owns it.
+- A herdr, herdr-core or opencode binary left in `~/.local/bin` on the home
+  volume shadows the image's copy; decide whether the image or the user owns it.
+  `hc machine add --install` and `hc machine update` put one there when the
+  image's `hc` is older than the laptop's, so keep the two on one version.

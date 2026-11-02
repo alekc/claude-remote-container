@@ -29,6 +29,8 @@ check trivy --version
 check rclone version
 check uv --version
 check herdr --version
+check hc --version
+check sh -c 'test "$(readlink /usr/local/bin/hc)" = herdr-core'
 check opencode --version
 check gh --version
 check glab --version
