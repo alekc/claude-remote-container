@@ -140,7 +140,7 @@ RUN . /usr/local/lib/fetch.sh; u=https://github.com/Infisical/cli/releases/downl
 FROM dl AS tofu
 # Matches the laptop: a newer binary rewrites state irreversibly. No automerge.
 # renovate: datasource=github-releases depName=opentofu/opentofu
-ARG TOFU_VERSION=1.13.8
+ARG TOFU_VERSION=1.13.9
 RUN . /usr/local/lib/fetch.sh; u=https://github.com/opentofu/opentofu/releases/download/v${TOFU_VERSION}; \
   f=tofu_${TOFU_VERSION}_linux_amd64.tar.gz; fetch $u/$f $f; fetch $u/tofu_${TOFU_VERSION}_SHA256SUMS sums; \
   verify "$(sum_of sums $f)" $f; tar -xzf $f tofu; install -D -m 0755 tofu /out/tofu
