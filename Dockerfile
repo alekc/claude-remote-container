@@ -281,9 +281,9 @@ RUN uv tool install --no-cache --python /usr/bin/python3 ansible-core==${ANSIBLE
 # project's .go-version, .nvmrc, .python-version or mise.toml picks another,
 # installed on first use into the home volume. mise verifies each download.
 # renovate: datasource=golang-version depName=go
-ARG GO_VERSION=1.27.3
+ARG GO_VERSION=1.27.4
 # renovate: datasource=node-version depName=node
-ARG NODE_VERSION=26.13.0
+ARG NODE_VERSION=26.13.1
 # renovate: datasource=python-version depName=python
 ARG PYTHON_VERSION=3.15.2
 RUN install -d /etc/mise \
