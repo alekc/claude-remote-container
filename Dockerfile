@@ -102,7 +102,7 @@ FROM dl AS herdr-core
 # herdr-core PATH finds, as the laptop's connect does, so a newer copy that
 # `hc machine update` drops in ~/.local/bin cannot split hc from the server.
 # renovate: datasource=github-tags depName=herdrdev/herdr-core
-ARG HERDR_CORE_VERSION=0.1.19
+ARG HERDR_CORE_VERSION=0.1.20
 RUN . /usr/local/lib/fetch.sh; u=https://releases.herdr.dev/core/${HERDR_CORE_VERSION}; \
   f=herdr-core-linux-x86_64.tar.gz; fetch $u/manifest.json m.json; fetch $u/$f $f; \
   verify "$(jq -r '.targets."linux-x86_64".sha256 // empty' m.json)" $f; tar -xzf $f herdr-core; \
@@ -111,7 +111,7 @@ RUN . /usr/local/lib/fetch.sh; u=https://releases.herdr.dev/core/${HERDR_CORE_VE
 
 FROM dl AS opencode
 # renovate: datasource=github-releases depName=anomalyco/opencode
-ARG OPENCODE_VERSION=2.2.6
+ARG OPENCODE_VERSION=2.2.7
 RUN . /usr/local/lib/fetch.sh; u=https://github.com/anomalyco/opencode/releases/download/v${OPENCODE_VERSION}; \
   f=opencode-linux-x64.tar.gz; fetch $u/$f $f; fetch $u/SHA256SUMS sums; \
   verify "$(sum_of sums $f)" $f; tar -xzf $f opencode; install -D -m 0755 opencode /out/opencode
@@ -125,14 +125,14 @@ RUN . /usr/local/lib/fetch.sh; u=https://github.com/cli/cli/releases/download/v$
 
 FROM dl AS glab
 # renovate: datasource=gitlab-releases depName=gitlab-org/cli
-ARG GLAB_VERSION=1.128.0
+ARG GLAB_VERSION=1.130.0
 RUN . /usr/local/lib/fetch.sh; u=https://gitlab.com/gitlab-org/cli/-/releases/v${GLAB_VERSION}/downloads; \
   f=glab_${GLAB_VERSION}_linux_amd64.tar.gz; fetch $u/$f $f; fetch $u/checksums.txt sums; \
   verify "$(sum_of sums $f)" $f; tar -xzf $f; install -D -m 0755 bin/glab /out/glab
 
 FROM dl AS infisical
 # renovate: datasource=github-releases depName=Infisical/cli
-ARG INFISICAL_VERSION=0.45.4
+ARG INFISICAL_VERSION=0.45.6
 RUN . /usr/local/lib/fetch.sh; u=https://github.com/Infisical/cli/releases/download/v${INFISICAL_VERSION}; \
   f=cli_${INFISICAL_VERSION}_linux_amd64.tar.gz; fetch $u/$f $f; fetch $u/checksums.txt sums; \
   verify "$(sum_of sums $f)" $f; tar -xzf $f; install -D -m 0755 infisical /out/infisical
@@ -178,7 +178,7 @@ RUN . /usr/local/lib/fetch.sh; u=https://github.com/starship/starship/releases/d
 
 FROM dl AS mise
 # renovate: datasource=github-releases depName=jdx/mise
-ARG MISE_VERSION=2026.11.5
+ARG MISE_VERSION=2026.11.6
 RUN . /usr/local/lib/fetch.sh; u=https://github.com/jdx/mise/releases/download/v${MISE_VERSION}; \
   f=mise-v${MISE_VERSION}-linux-x64; fetch $u/$f $f; fetch $u/SHASUMS256.txt sums; \
   verify "$(sum_of sums $f)" $f; install -D -m 0755 $f /out/mise
@@ -312,7 +312,7 @@ RUN npm install --global --prefix /opt/ccstatusline --cache /tmp/npm-cache \
 RUN install -d -o 1000 -g 1000 /home/linuxbrew
 USER 1000:1000
 # renovate: datasource=git-refs depName=https://github.com/Homebrew/install branch=main
-ARG HOMEBREW_INSTALL_REF=7986efac25016e41eed7e471666140c06f9d97cf
+ARG HOMEBREW_INSTALL_REF=e5b3c5834e3932c8aaa42deef4794076c9b0cbf0
 RUN curl -fsSL --proto '=https' -o /tmp/brew-install.sh \
     "https://raw.githubusercontent.com/Homebrew/install/${HOMEBREW_INSTALL_REF}/install.sh" \
   && HOME=/tmp/brew-home NONINTERACTIVE=1 HOMEBREW_NO_ANALYTICS=1 bash /tmp/brew-install.sh \
