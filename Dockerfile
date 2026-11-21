@@ -14,7 +14,7 @@ WORKDIR /w
 
 FROM dl AS helm
 # renovate: datasource=github-releases depName=helm/helm
-ARG HELM_VERSION=4.3.1
+ARG HELM_VERSION=4.3.2
 RUN . /usr/local/lib/fetch.sh; f=helm-v${HELM_VERSION}-linux-amd64.tar.gz; \
   fetch https://get.helm.sh/$f $f; fetch https://get.helm.sh/$f.sha256sum sums; \
   verify "$(sum_of sums $f)" $f; tar -xzf $f; install -D -m 0755 linux-amd64/helm /out/helm
@@ -50,14 +50,14 @@ RUN . /usr/local/lib/fetch.sh; u=https://github.com/vmware-tanzu/velero/releases
 
 FROM dl AS vals
 # renovate: datasource=github-releases depName=helmfile/vals
-ARG VALS_VERSION=0.51.0
+ARG VALS_VERSION=0.51.1
 RUN . /usr/local/lib/fetch.sh; u=https://github.com/helmfile/vals/releases/download/v${VALS_VERSION}; \
   f=vals_${VALS_VERSION}_linux_amd64.tar.gz; fetch $u/$f $f; fetch $u/vals_${VALS_VERSION}_checksums.txt sums; \
   verify "$(sum_of sums $f)" $f; tar -xzf $f; install -D -m 0755 vals /out/vals
 
 FROM dl AS helmfile
 # renovate: datasource=github-releases depName=helmfile/helmfile
-ARG HELMFILE_VERSION=1.8.3
+ARG HELMFILE_VERSION=1.8.4
 RUN . /usr/local/lib/fetch.sh; u=https://github.com/helmfile/helmfile/releases/download/v${HELMFILE_VERSION}; \
   f=helmfile_${HELMFILE_VERSION}_linux_amd64.tar.gz; fetch $u/$f $f; fetch $u/helmfile_${HELMFILE_VERSION}_checksums.txt sums; \
   verify "$(sum_of sums $f)" $f; tar -xzf $f; install -D -m 0755 helmfile /out/helmfile
@@ -78,7 +78,7 @@ RUN . /usr/local/lib/fetch.sh; u=https://github.com/rclone/rclone/releases/downl
 
 FROM dl AS uv
 # renovate: datasource=github-releases depName=astral-sh/uv
-ARG UV_VERSION=0.13.7
+ARG UV_VERSION=0.13.9
 RUN . /usr/local/lib/fetch.sh; u=https://github.com/astral-sh/uv/releases/download/${UV_VERSION}; \
   d=uv-x86_64-unknown-linux-gnu; f=$d.tar.gz; fetch $u/$f $f; fetch $u/$f.sha256 sums; \
   verify "$(sum_of sums $f)" $f; tar -xzf $f; install -D -m 0755 -t /out $d/uv $d/uvx
@@ -102,7 +102,7 @@ FROM dl AS herdr-core
 # herdr-core PATH finds, as the laptop's connect does, so a newer copy that
 # `hc machine update` drops in ~/.local/bin cannot split hc from the server.
 # renovate: datasource=github-tags depName=herdrdev/herdr-core
-ARG HERDR_CORE_VERSION=0.1.19
+ARG HERDR_CORE_VERSION=0.1.21
 RUN . /usr/local/lib/fetch.sh; u=https://releases.herdr.dev/core/${HERDR_CORE_VERSION}; \
   f=herdr-core-linux-x86_64.tar.gz; fetch $u/manifest.json m.json; fetch $u/$f $f; \
   verify "$(jq -r '.targets."linux-x86_64".sha256 // empty' m.json)" $f; tar -xzf $f herdr-core; \
@@ -111,28 +111,28 @@ RUN . /usr/local/lib/fetch.sh; u=https://releases.herdr.dev/core/${HERDR_CORE_VE
 
 FROM dl AS opencode
 # renovate: datasource=github-releases depName=anomalyco/opencode
-ARG OPENCODE_VERSION=2.2.6
+ARG OPENCODE_VERSION=2.3.2
 RUN . /usr/local/lib/fetch.sh; u=https://github.com/anomalyco/opencode/releases/download/v${OPENCODE_VERSION}; \
   f=opencode-linux-x64.tar.gz; fetch $u/$f $f; fetch $u/SHA256SUMS sums; \
   verify "$(sum_of sums $f)" $f; tar -xzf $f opencode; install -D -m 0755 opencode /out/opencode
 
 FROM dl AS gh
 # renovate: datasource=github-releases depName=cli/cli
-ARG GH_VERSION=2.103.3
+ARG GH_VERSION=2.105.0
 RUN . /usr/local/lib/fetch.sh; u=https://github.com/cli/cli/releases/download/v${GH_VERSION}; \
   d=gh_${GH_VERSION}_linux_amd64; f=$d.tar.gz; fetch $u/$f $f; fetch $u/gh_${GH_VERSION}_checksums.txt sums; \
   verify "$(sum_of sums $f)" $f; tar -xzf $f; install -D -m 0755 $d/bin/gh /out/gh
 
 FROM dl AS glab
 # renovate: datasource=gitlab-releases depName=gitlab-org/cli
-ARG GLAB_VERSION=1.128.0
+ARG GLAB_VERSION=1.131.0
 RUN . /usr/local/lib/fetch.sh; u=https://gitlab.com/gitlab-org/cli/-/releases/v${GLAB_VERSION}/downloads; \
   f=glab_${GLAB_VERSION}_linux_amd64.tar.gz; fetch $u/$f $f; fetch $u/checksums.txt sums; \
   verify "$(sum_of sums $f)" $f; tar -xzf $f; install -D -m 0755 bin/glab /out/glab
 
 FROM dl AS infisical
 # renovate: datasource=github-releases depName=Infisical/cli
-ARG INFISICAL_VERSION=0.45.4
+ARG INFISICAL_VERSION=0.45.11
 RUN . /usr/local/lib/fetch.sh; u=https://github.com/Infisical/cli/releases/download/v${INFISICAL_VERSION}; \
   f=cli_${INFISICAL_VERSION}_linux_amd64.tar.gz; fetch $u/$f $f; fetch $u/checksums.txt sums; \
   verify "$(sum_of sums $f)" $f; tar -xzf $f; install -D -m 0755 infisical /out/infisical
@@ -178,7 +178,7 @@ RUN . /usr/local/lib/fetch.sh; u=https://github.com/starship/starship/releases/d
 
 FROM dl AS mise
 # renovate: datasource=github-releases depName=jdx/mise
-ARG MISE_VERSION=2026.11.5
+ARG MISE_VERSION=2026.11.10
 RUN . /usr/local/lib/fetch.sh; u=https://github.com/jdx/mise/releases/download/v${MISE_VERSION}; \
   f=mise-v${MISE_VERSION}-linux-x64; fetch $u/$f $f; fetch $u/SHASUMS256.txt sums; \
   verify "$(sum_of sums $f)" $f; install -D -m 0755 $f /out/mise
@@ -208,7 +208,7 @@ RUN . /usr/local/lib/fetch.sh; u=https://github.com/helm-unittest/helm-unittest/
 
 FROM dl AS helm-schema
 # renovate: datasource=github-releases depName=losisin/helm-values-schema-json
-ARG HELM_SCHEMA_VERSION=2.6.0
+ARG HELM_SCHEMA_VERSION=2.6.1
 RUN . /usr/local/lib/fetch.sh; u=https://github.com/losisin/helm-values-schema-json/releases/download/v${HELM_SCHEMA_VERSION}; \
   f=helm-values-schema-json_${HELM_SCHEMA_VERSION}_linux_amd64.tgz; fetch $u/$f $f; fetch $u/helm-values-schema-json-checksum.sha sums; \
   verify "$(sum_of sums $f)" $f; mkdir -p /out/schema; untar_root $f /out/schema
@@ -312,7 +312,7 @@ RUN npm install --global --prefix /opt/ccstatusline --cache /tmp/npm-cache \
 RUN install -d -o 1000 -g 1000 /home/linuxbrew
 USER 1000:1000
 # renovate: datasource=git-refs depName=https://github.com/Homebrew/install branch=main
-ARG HOMEBREW_INSTALL_REF=7986efac25016e41eed7e471666140c06f9d97cf
+ARG HOMEBREW_INSTALL_REF=c9c975046f78e6e6d662deb801bd461ebd6a54ed
 RUN curl -fsSL --proto '=https' -o /tmp/brew-install.sh \
     "https://raw.githubusercontent.com/Homebrew/install/${HOMEBREW_INSTALL_REF}/install.sh" \
   && HOME=/tmp/brew-home NONINTERACTIVE=1 HOMEBREW_NO_ANALYTICS=1 bash /tmp/brew-install.sh \
