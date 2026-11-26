@@ -6,3 +6,5 @@ setopt share_history hist_ignore_dups hist_ignore_space
 . /usr/local/share/claude-remote/aliases.sh
 (( $+commands[kubectl] )) && . <(kubectl completion zsh) && compdef k=kubectl
 (( $+commands[starship] )) && eval "$(starship init zsh)"
+# Last, after anything else that adds prompt hooks, as direnv asks.
+(( $+commands[direnv] )) && eval "$(direnv hook zsh)"
