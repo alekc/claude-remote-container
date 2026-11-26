@@ -32,6 +32,11 @@
       "extractVersion": "^v?(?<version>.*)$"
     },
     {
+      "description": "Bun tags its releases bun-v<version>",
+      "matchPackageNames": ["oven-sh/bun"],
+      "extractVersion": "^bun-v(?<version>.*)$"
+    },
+    {
       "description": "A git commit has no release timestamp, which would hold its bumps forever; every other datasource keeps the 3-day age check",
       "matchDatasources": ["git-refs"],
       "minimumReleaseAgeBehaviour": "timestamp-optional"
@@ -73,6 +78,12 @@
       "matchPackageNames": ["opentofu/opentofu", "hashicorp/terraform"],
       "matchUpdateTypes": ["minor", "patch"],
       "automerge": true
+    },
+    {
+      "description": "omp is pinned to the version ai-worker's guard was tested against; own PR so it does not hold the tooling group",
+      "matchPackageNames": ["@oh-my-pi/pi-coding-agent"],
+      "groupName": "omp",
+      "automerge": false
     },
     {
       "description": "kubectl tracks the cluster's minor",
