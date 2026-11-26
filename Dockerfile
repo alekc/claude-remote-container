@@ -109,6 +109,14 @@ RUN . /usr/local/lib/fetch.sh; u=https://releases.herdr.dev/core/${HERDR_CORE_VE
   install -D -m 0755 herdr-core /out/herdr-core; \
   printf '#!/bin/sh\nexec herdr-core "$@"\n' > /out/hc; chmod 0755 /out/hc
 
+FROM dl AS bun
+# renovate: datasource=github-releases depName=oven-sh/bun
+ARG BUN_VERSION=1.4.5
+RUN . /usr/local/lib/fetch.sh; u=https://github.com/oven-sh/bun/releases/download/bun-v${BUN_VERSION}; \
+  f=bun-linux-x64.zip; fetch $u/$f $f; fetch $u/SHASUMS256.txt sums; \
+  verify "$(sum_of sums $f)" $f; unzip -q $f; install -D -m 0755 bun-linux-x64/bun /out/bun \
+  && ln -s bun /out/bunx
+
 FROM dl AS opencode
 # renovate: datasource=github-releases depName=anomalyco/opencode
 ARG OPENCODE_VERSION=2.2.6
@@ -248,6 +256,7 @@ COPY --from=rclone /out/ /usr/local/bin/
 COPY --from=uv /out/ /usr/local/bin/
 COPY --from=herdr /out/ /usr/local/bin/
 COPY --from=herdr-core /out/ /usr/local/bin/
+COPY --from=bun /out/ /usr/local/bin/
 COPY --from=opencode /out/ /usr/local/bin/
 COPY --from=gh /out/ /usr/local/bin/
 COPY --from=glab /out/ /usr/local/bin/
@@ -304,6 +313,18 @@ RUN npm install --global --prefix /opt/ccstatusline --cache /tmp/npm-cache \
     --no-fund --no-audit ccstatusline@${CCSTATUSLINE_VERSION} \
   && ln -s /opt/ccstatusline/bin/ccstatusline /usr/local/bin/ccstatusline \
   && rm -rf /tmp/npm-cache
+
+# oh-my-pi runs on Bun. A root-owned prefix keeps `omp update` from replacing
+# the pinned version, which ai-worker's guard was tested against.
+# renovate: datasource=npm depName=@oh-my-pi/pi-coding-agent
+ARG OMP_VERSION=19.2.1
+RUN install -d /opt/omp \
+  && printf '%s\n' '{"name": "omp-pin", "private": true}' > /opt/omp/package.json \
+  && cd /opt/omp \
+  && BUN_INSTALL_CACHE_DIR=/tmp/bun-cache bun add --exact --no-progress \
+    @oh-my-pi/pi-coding-agent@${OMP_VERSION} \
+  && ln -s /opt/omp/node_modules/.bin/omp /usr/local/bin/omp \
+  && rm -rf /tmp/bun-cache
 
 # Homebrew is the scratch tier: owned by the agent user, so installs need no
 # sudo, and outside the home volume, so they reset on every restart.

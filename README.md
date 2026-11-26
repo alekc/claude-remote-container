@@ -20,6 +20,9 @@ as a single Kubernetes pod with a persistent home volume.
   `pre-commit`, `herdr`, `herdr-core` (`hc`), Homebrew.
 - [OpenCode](https://opencode.ai) (`opencode`, V2 line) beside Claude Code, with
   its self-update off: the image pins the version.
+- [oh-my-pi](https://github.com/can1357/oh-my-pi) (`omp`) on [Bun](https://bun.sh),
+  installed under `/opt/omp`, where `omp update` cannot write: the image pins
+  the version, and Renovate leaves its bumps for review.
 - [ccstatusline](https://github.com/sirmalloc/ccstatusline) as the Claude Code
   status line, seeded with a default layout.
 - zsh as the agent's login shell, with [starship](https://starship.rs) and

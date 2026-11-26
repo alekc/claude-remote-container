@@ -31,6 +31,8 @@ check uv --version
 check herdr --version
 check hc --version
 check opencode --version
+check bun --version
+as_user 'PI_CODING_AGENT_DIR=$(mktemp -d) omp --version'
 check gh --version
 check glab --version
 check infisical --version
